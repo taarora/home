@@ -2,672 +2,1031 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Expedition Planner</title>
+<title>Expedition Log — Photography Trip Planner</title>
 <style>
   :root {
-    --idea-bg: #e0ecff; --idea-border: #6b9bff; --idea-text: #1d4ed8;
-    --planned-bg: #fff2d9; --planned-border: #f0a93a; --planned-text: #9a5b00;
-    --confirmed-bg: #dcf7e3; --confirmed-border: #34b365; --confirmed-text: #14742f;
-    --ink: #1f2430; --muted: #6b7280; --border: #d9dde3; --bg: #f7f8fa;
+    --paper: #ede8dc;
+    --paper-raised: #f8f5ec;
+    --paper-sunken: #e2ddce;
+    --ink: #232920;
+    --ink-soft: #5c6353;
+    --ink-faint: #8c8875;
+    --rule: #d6cfba;
+    --rule-strong: #c2b99f;
+    --accent: #2b5a56;
+    --accent-soft: #cfe0da;
+    --accent-contrast: #f8f5ec;
+    --status-idea: #918c78;
+    --status-planned: #b9793a;
+    --status-confirmed: #3e6fa8;
+    --danger: #a8433a;
+    --shadow: 0 1px 2px rgba(35,41,32,0.06), 0 4px 14px rgba(35,41,32,0.07);
+    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --font-body: "Seravek", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Cascadia Mono", Consolas, Menlo, monospace;
+    color-scheme: light;
   }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #171b13;
+      --paper-raised: #1f2419;
+      --paper-sunken: #12150f;
+      --ink: #e9e4d3;
+      --ink-soft: #aca88f;
+      --ink-faint: #726e5c;
+      --rule: #363c2b;
+      --rule-strong: #454b37;
+      --accent: #7fc2ba;
+      --accent-soft: #263a35;
+      --accent-contrast: #12160f;
+      --status-idea: #a19c86;
+      --status-planned: #dd9d55;
+      --status-confirmed: #74a5db;
+      --danger: #d3776d;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #171b13; --paper-raised: #1f2419; --paper-sunken: #12150f;
+    --ink: #e9e4d3; --ink-soft: #aca88f; --ink-faint: #726e5c;
+    --rule: #363c2b; --rule-strong: #454b37;
+    --accent: #7fc2ba; --accent-soft: #263a35; --accent-contrast: #12160f;
+    --status-idea: #a19c86; --status-planned: #dd9d55; --status-confirmed: #74a5db;
+    --danger: #d3776d;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --paper: #ede8dc; --paper-raised: #f8f5ec; --paper-sunken: #e2ddce;
+    --ink: #232920; --ink-soft: #5c6353; --ink-faint: #8c8875;
+    --rule: #d6cfba; --rule-strong: #c2b99f;
+    --accent: #2b5a56; --accent-soft: #cfe0da; --accent-contrast: #f8f5ec;
+    --status-idea: #918c78; --status-planned: #b9793a; --status-confirmed: #3e6fa8;
+    --danger: #a8433a;
+    color-scheme: light;
+  }
+
   * { box-sizing: border-box; }
   body {
-    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    background: var(--bg); color: var(--ink);
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
-  header {
-    position: sticky; top: 0; z-index: 20; background: #fff; border-bottom: 1px solid var(--border);
-    padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-  }
-  header h1 { font-size: 18px; margin: 0 16px 0 0; white-space: nowrap; }
-  header .spacer { flex: 1 1 auto; }
-  button, select, input[type="file"]::file-selector-button {
-    font: inherit; border: 1px solid var(--border); background: #fff; color: var(--ink);
-    padding: 6px 10px; border-radius: 6px; cursor: pointer;
-  }
-  button:hover, select:hover { background: #f0f1f3; }
-  button.primary { background: #2454e8; border-color: #2454e8; color: #fff; }
-  button.primary:hover { background: #1c40b8; }
-  button.danger { background: #e0392f; border-color: #e0392f; color: #fff; }
-  button.danger:hover { background: #b52c24; }
-  .legend { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--muted); }
-  .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
-  .dot.idea { background: var(--idea-border); }
-  .dot.planned { background: var(--planned-border); }
-  .dot.confirmed { background: var(--confirmed-border); }
+  ::selection { background: var(--accent-soft); }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  main { padding: 16px; max-width: 1400px; margin: 0 auto; }
-  .year-block { margin-bottom: 28px; }
-  .year-block h2 { font-size: 20px; margin: 0 0 10px; }
-  .months-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;
+  .app { max-width: 1180px; margin: 0 auto; padding: 28px 28px 64px; }
+
+  /* ---------- Header ---------- */
+  .masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 20px;
   }
-  .month {
-    background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px; user-select: none;
+  .masthead-title .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
   }
-  .month h3 { font-size: 13px; margin: 2px 4px 8px; font-weight: 600; }
-  .dow-row, .day-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-  .dow-row div { font-size: 10px; color: var(--muted); text-align: center; padding: 2px 0; }
-  .day-cell {
-    min-height: 40px; border-radius: 4px; padding: 2px; font-size: 10px; position: relative;
-    border: 1px solid transparent; cursor: pointer;
+  .masthead-title h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 34px;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
   }
-  .day-cell.in-month { border: 1px solid #eee; }
-  .day-cell.today { border-color: #2454e8; }
-  .day-cell.selecting { background: #dbe6ff; }
-  .day-cell .daynum { color: var(--muted); font-size: 9px; }
+  .masthead-title p {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+  }
+  .masthead-title p strong { color: var(--ink); font-weight: 600; }
+
+  .masthead-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .year-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 4px 6px;
+  }
+  .year-nav button {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .year-nav button:hover { background: var(--accent-soft); color: var(--accent); }
+  .year-nav .range { padding: 0 4px; white-space: nowrap; }
+  .year-nav select.range {
+    font: inherit;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    appearance: none;
+  }
+  .year-nav select.range:hover { color: var(--accent); }
+
+  .btn {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-raised);
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 120ms ease, transform 80ms ease;
+  }
+  .btn:hover { background: var(--accent-soft); }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .btn-primary:hover { filter: brightness(1.08); background: var(--accent); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-soft); }
+  .btn-ghost:hover { background: var(--paper-sunken); color: var(--ink); }
+  .btn-danger { color: var(--danger); border-color: transparent; background: transparent; }
+  .btn-danger:hover { background: rgba(168,67,58,0.12); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---------- Legend + summary line ---------- */
+  .subbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  /* ---------- Unscheduled tray ---------- */
+  .tray {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 22px;
+  }
+  .tray-head {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+  .tray-head .count {
+    background: var(--paper-sunken);
+    border-radius: 20px;
+    padding: 1px 8px;
+    font-family: var(--font-body);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
+  }
+  .tray-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-height: 46px;
+  }
+  .tray-row.drag-over { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: 8px; }
+  .tray-empty { color: var(--ink-faint); font-size: 13px; font-style: italic; padding: 10px 2px; }
+
+  /* ---------- Calendar grid ---------- */
+  .cal-scroll { overflow-x: auto; padding-bottom: 4px; }
+  .cal {
+    display: grid;
+    grid-template-columns: 56px repeat(3, minmax(190px, 1fr));
+    min-width: 700px;
+    border-top: 1px solid var(--rule-strong);
+    border-left: 1px solid var(--rule-strong);
+  }
+  .cal-corner {
+    border-bottom: 1px solid var(--rule-strong);
+    border-right: 1px solid var(--rule-strong);
+    background: var(--paper);
+  }
+  .cal-yearhead {
+    padding: 6px 12px 10px;
+    border-bottom: 1px solid var(--rule-strong);
+    border-right: 1px solid var(--rule-strong);
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .cal-yearhead .trip-count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  .cal-monthlabel {
+    position: sticky;
+    left: 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    border-right: 1px solid var(--rule-strong);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+  .cell {
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+    border-right: 1px solid var(--rule-strong);
+    background: var(--paper-raised);
+    min-height: 78px;
+    padding: 6px 7px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cell.drag-over { background: var(--accent-soft); }
+  .cell.is-today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cell-add {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-raised);
+    color: var(--ink-faint);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 100ms ease;
+  }
+  .cell:hover .cell-add, .cell:focus-within .cell-add { opacity: 1; }
+  .cell-add:hover { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .cell-chips { display: flex; flex-direction: column; gap: 4px; margin-top: 14px; }
+
   .chip {
-    margin-top: 1px; padding: 1px 3px; border-radius: 3px; font-size: 9px; line-height: 1.3;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; border: 1px solid;
+    background: color-mix(in srgb, var(--status-color, var(--accent)) 14%, var(--paper-raised));
+    border: 1px solid color-mix(in srgb, var(--status-color, var(--accent)) 32%, var(--rule-strong));
+    border-left: 3px solid var(--status-color, var(--accent));
+    border-radius: 5px;
+    padding: 4px 7px;
+    cursor: grab;
+    box-shadow: var(--shadow);
   }
-  .chip.idea { background: var(--idea-bg); border-color: var(--idea-border); color: var(--idea-text); }
-  .chip.planned { background: var(--planned-bg); border-color: var(--planned-border); color: var(--planned-text); }
-  .chip.confirmed { background: var(--confirmed-bg); border-color: var(--confirmed-border); color: var(--confirmed-text); }
+  .chip:active { cursor: grabbing; }
+  .chip.dragging { opacity: 0.4; }
+  .chip-title {
+    display: block;
+    font-weight: 600;
+    font-size: 12.5px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chip-loc {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tray-row .chip { min-width: 150px; max-width: 220px; }
 
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(20,22,30,0.45); z-index: 100;
-    align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 16px;
+  /* ---------- Modal ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(20,23,16,0.45);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+    z-index: 50;
   }
-  .modal-overlay.open { display: flex; }
+  .modal-backdrop[hidden] { display: none; }
   .modal {
-    background: #fff; border-radius: 10px; width: 100%; max-width: 560px; padding: 20px 22px 22px;
+    background: var(--paper-raised);
+    border-radius: 12px;
+    border: 1px solid var(--rule-strong);
+    width: 100%;
+    max-width: 640px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
   }
-  .modal h2 { margin: 0 0 14px; font-size: 18px; }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
-  .field input[type=text], .field input[type=number], .field input[type=date], .field input[type=url],
-  .field select, .field textarea {
-    width: 100%; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit;
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--rule);
   }
-  .field textarea { min-height: 60px; resize: vertical; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .repeat-list { display: flex; flex-direction: column; gap: 6px; }
-  .repeat-item { display: flex; gap: 6px; align-items: center; }
-  .repeat-item input { flex: 1 1 auto; }
-  .repeat-item button { flex: 0 0 auto; padding: 4px 8px; }
-  .add-row-btn { margin-top: 4px; align-self: flex-start; }
-  .photo-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .photo-thumbs img { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
-  .modal-actions { display: flex; justify-content: space-between; margin-top: 18px; gap: 8px; }
-  .modal-actions .right { display: flex; gap: 8px; }
-  .hidden-file { display: none; }
+  .modal-head h2 {
+    font-family: var(--font-display);
+    font-size: 19px;
+    margin: 0;
+  }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .modal-close:hover { background: var(--paper-sunken); color: var(--ink); }
+  .modal-body { padding: 4px 22px 6px; max-height: 72vh; overflow-y: auto; }
+  .modal-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--rule);
+  }
+  .modal-foot .right { display: flex; gap: 8px; }
+
+  section.field-group { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  section.field-group:last-child { border-bottom: none; }
+  .group-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 10px;
+  }
+  .row { display: flex; gap: 10px; margin-bottom: 8px; }
+  .row:last-child { margin-bottom: 0; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .field label { font-size: 11.5px; color: var(--ink-soft); }
+  input[type="text"], input[type="url"], input[type="number"], select, textarea {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper);
+    color: var(--ink);
+    width: 100%;
+  }
+  textarea { resize: vertical; min-height: 54px; font-family: var(--font-body); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+  .status-select-wrap { position: relative; }
+  select#f-status { appearance: none; padding-right: 26px; }
+
+  .tags {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+  }
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 3px 6px 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .tag button {
+    border: none; background: transparent; color: inherit; cursor: pointer;
+    width: 16px; height: 16px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
+    font-size: 12px; opacity: 0.7;
+  }
+  .tag button:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+
+  .repeat-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .repeat-row input { flex: 1; }
+  .icon-btn {
+    width: 26px; height: 26px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .icon-btn:hover { background: var(--paper-sunken); color: var(--danger); }
+  .add-row-btn {
+    font-size: 12px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+    font-weight: 600;
+  }
+  .add-row-btn:hover { text-decoration: underline; }
+  .link-list a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent-soft);
+  }
+
+  .budget-row { display: grid; grid-template-columns: 110px 90px 1fr; gap: 8px; }
+
+  .photo-gallery { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .photo-card { width: 96px; }
+  .photo-card img {
+    width: 96px; height: 72px; object-fit: cover;
+    border-radius: 6px; border: 1px solid var(--rule-strong);
+    display: block; cursor: zoom-in;
+  }
+  .photo-card input {
+    margin-top: 4px; font-size: 10.5px; padding: 3px 5px;
+  }
+  .photo-card .icon-btn { width: 100%; margin-top: 4px; }
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 600; color: var(--accent);
+    cursor: pointer; padding: 6px 0;
+  }
+  .upload-btn input { display: none; }
+
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(10,12,8,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 30px;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+
+  .toast {
+    position: fixed; bottom: 22px; right: 22px;
+    background: var(--ink); color: var(--paper);
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; box-shadow: var(--shadow);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 180ms ease, transform 180ms ease;
+    pointer-events: none;
+    z-index: 200;
+    max-width: 320px;
+  }
+  :root[data-theme="dark"] .toast, @media (prefers-color-scheme: dark) { }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 720px) {
+    .app { padding: 18px 14px 48px; }
+    .masthead-title h1 { font-size: 26px; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>🧭 Expedition Planner</h1>
-  <button id="prevYearsBtn" title="Shift view back a year">◀</button>
-  <select id="yearJump"></select>
-  <button id="nextYearsBtn" title="Shift view forward a year">▶</button>
-  <div class="spacer"></div>
-  <div class="legend">
-    <span><span class="dot idea"></span>Idea</span>
-    <span><span class="dot planned"></span>Planned</span>
-    <span><span class="dot confirmed"></span>Confirmed</span>
+<div class="app">
+  <header class="masthead">
+    <div class="masthead-title">
+      <span class="eyebrow">Field Log · Photography Trips</span>
+      <h1>Expedition Planner</h1>
+      <p id="summaryLine">Loading&hellip;</p>
+    </div>
+    <div class="masthead-actions">
+      <div class="year-nav">
+        <button id="prevYear" aria-label="Show earlier years">‹</button>
+        <select class="range" id="yearRange" aria-label="Jump to a year range"></select>
+        <button id="nextYear" aria-label="Show later years">›</button>
+      </div>
+      <button class="btn" id="todayBtn">Today</button>
+      <button class="btn btn-primary" id="newTripBtn">+ New Trip</button>
+      <button class="btn btn-ghost" id="exportBtn">Export JSON</button>
+      <button class="btn btn-ghost" id="importBtn">Import JSON</button>
+      <input type="file" id="importFile" accept="application/json" class="visually-hidden" />
+      <button class="btn btn-ghost" id="exportCsvBtn">Export CSV</button>
+      <button class="btn btn-ghost" id="importCsvBtn">Import CSV</button>
+      <input type="file" id="importCsvFile" accept=".csv,text/csv" class="visually-hidden" />
+    </div>
+  </header>
+
+  <div class="subbar">
+    <div class="legend">
+      <span><span class="dot" style="background:var(--status-idea)"></span>Idea</span>
+      <span><span class="dot" style="background:var(--status-planned)"></span>Planned</span>
+      <span><span class="dot" style="background:var(--status-confirmed)"></span>Confirmed</span>
+    </div>
+    <span>Drag a trip onto any month to reschedule it, or into the tray to unschedule it.</span>
   </div>
-  <button id="newTripBtn" class="primary">+ New Trip</button>
-  <button id="exportCsvBtn">Export CSV</button>
-  <button id="importCsvBtn">Import CSV</button>
-  <button id="exportJsonBtn">Backup JSON</button>
-  <button id="importJsonBtn">Restore JSON</button>
-  <input type="file" id="csvFileInput" class="hidden-file" accept=".csv">
-  <input type="file" id="jsonFileInput" class="hidden-file" accept=".json">
-</header>
 
-<main id="calendarRoot"></main>
+  <div class="tray" id="tray">
+    <div class="tray-head"><span>Unscheduled ideas</span><span class="count" id="trayCount">0</span></div>
+    <div class="tray-row" id="trayRow" data-year="" data-month=""></div>
+  </div>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <h2 id="modalTitle">New Trip</h2>
-    <form id="tripForm">
-      <div class="field">
-        <label>Trip title</label>
-        <input type="text" id="f-title" required>
-      </div>
-      <div class="row2">
-        <div class="field">
-          <label>Start date</label>
-          <input type="date" id="f-start" required>
-        </div>
-        <div class="field">
-          <label>End date</label>
-          <input type="date" id="f-end" required>
-        </div>
-      </div>
-      <div class="row2">
-        <div class="field">
-          <label>Status</label>
-          <select id="f-status">
-            <option value="idea">Idea</option>
-            <option value="planned">Planned</option>
-            <option value="confirmed">Confirmed</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Budget (USD)</label>
-          <input type="number" id="f-budget" min="0" step="1">
-        </div>
-      </div>
-      <div class="field">
-        <label>Key species</label>
-        <input type="text" id="f-species" placeholder="Snow leopard, red panda, ...">
-      </div>
-      <div class="field">
-        <label>Links</label>
-        <div class="repeat-list" id="linksList"></div>
-        <button type="button" class="add-row-btn" id="addLinkBtn">+ Add link</button>
-      </div>
-      <div class="field">
-        <label>Tour operators</label>
-        <div class="repeat-list" id="operatorsList"></div>
-        <button type="button" class="add-row-btn" id="addOperatorBtn">+ Add operator</button>
-      </div>
-      <div class="field">
-        <label>Inspiration photos (image URLs)</label>
-        <div class="repeat-list" id="photosList"></div>
-        <button type="button" class="add-row-btn" id="addPhotoBtn">+ Add photo URL</button>
-        <div class="photo-thumbs" id="photoThumbs"></div>
-      </div>
-      <div class="field">
-        <label>Notes</label>
-        <textarea id="f-notes"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="danger" id="deleteTripBtn">Delete trip</button>
-        <div class="right">
-          <button type="button" id="cancelBtn">Cancel</button>
-          <button type="submit" class="primary">Save</button>
-        </div>
-      </div>
-    </form>
+  <div class="cal-scroll">
+    <div class="cal" id="cal"></div>
   </div>
 </div>
+
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">New trip</h2>
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="deleteTripBtn">Delete trip</button>
+      <div class="right">
+        <button class="btn btn-ghost" id="cancelTripBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveTripBtn">Save trip</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+  <img id="lightboxImg" src="" alt="Inspiration photo" />
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "expeditionPlannerTrips";
-  var VIEW_YEAR_KEY = "expeditionPlannerViewYear";
-  var DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
-  var MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-  var trips = loadTrips();
-  var viewStartYear = loadViewYear();
-  var editingTripId = null;
-  var selecting = false;
-  var selStartDate = null;
-  var selEndDate = null;
-  var dragTripId = null;
-  var dragGrabOffsetDays = null;
-
-  function loadTrips() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
-  }
-  function saveTrips() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
-  }
-  function loadViewYear() {
-    var raw = localStorage.getItem(VIEW_YEAR_KEY);
-    return raw ? parseInt(raw, 10) : new Date().getFullYear();
-  }
-  function saveViewYear() {
-    localStorage.setItem(VIEW_YEAR_KEY, String(viewStartYear));
-  }
+  var STORAGE_KEY = "expeditionPlanner.v1";
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var STATUSES = [
+    { value: "idea", label: "Idea" },
+    { value: "planned", label: "Planned" },
+    { value: "confirmed", label: "Confirmed" }
+  ];
 
   function uid() {
-    return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    return "t_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
   }
-  function pad2(n) { return n < 10 ? "0" + n : String(n); }
-  function toISODate(y, m, d) { return y + "-" + pad2(m + 1) + "-" + pad2(d); }
-  function todayISO() {
-    var t = new Date();
-    return toISODate(t.getFullYear(), t.getMonth(), t.getDate());
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
   }
-  function parseISO(iso) {
-    var parts = iso.split("-").map(Number);
-    return new Date(parts[0], parts[1] - 1, parts[2]);
+
+  function blankTrip(year, month) {
+    return {
+      id: uid(),
+      title: "",
+      status: "idea",
+      year: year || null,
+      month: month || null,
+      dates: "",
+      groupSize: "",
+      locations: "",
+      species: [],
+      budget: { amount: "", currency: "USD", notes: "" },
+      links: [],
+      operators: [],
+      photos: [],
+      refLinks: [],
+      notes: ""
+    };
   }
-  function addDaysISO(iso, days) {
-    var d = parseISO(iso);
-    d.setDate(d.getDate() + days);
-    return toISODate(d.getFullYear(), d.getMonth(), d.getDate());
+
+  function seedData() {
+    return [
+      {
+        id: uid(), title: "Svalbard: Polar Bears & Pack Ice", status: "confirmed",
+        year: 2026, month: 3, dates: "14–24 Mar", groupSize: "6 photographers",
+        locations: "Longyearbyen, Svalbard\nPack ice edge, north of 80°N (ship-based)",
+        species: ["Polar bear", "Walrus", "Arctic fox", "Ivory gull"],
+        budget: { amount: "9200", currency: "USD", notes: "Per person, excl. flights to Oslo/Longyearbyen" },
+        links: [{ label: "Sea ice concentration charts", url: "https://example.com/svalbard-ice-charts" }],
+        operators: [{ name: "PolarQuest Expeditions", url: "https://example.com/polarquest", contact: "" }],
+        photos: [], refLinks: [{ label: "Reference: prior trip gallery", url: "https://example.com/svalbard-2024-gallery" }],
+        notes: "Long lens (600mm+) essential for bear-on-ice work. Midnight sun — pack ND grads for low-angle light shooting at odd hours."
+      },
+      {
+        id: uid(), title: "Pantanal: Jaguars of the Wetlands", status: "planned",
+        year: 2026, month: 8, dates: "3–13 Aug", groupSize: "8 photographers",
+        locations: "Porto Jofre, Northern Pantanal, Brazil",
+        species: ["Jaguar", "Giant otter", "Hyacinth macaw", "Capybara"],
+        budget: { amount: "6400", currency: "USD", notes: "Per person, excl. international flights" },
+        links: [], operators: [{ name: "Jaguar Ecological Reserve boats", url: "https://example.com/pantanal-boats", contact: "" }],
+        photos: [], refLinks: [],
+        notes: "Dry season — best river-bank sightings. Boat-based shooting; bring a monopod/beanbag rig."
+      },
+      {
+        id: uid(), title: "Ranthambore: Bengal Tigers", status: "confirmed",
+        year: 2027, month: 2, dates: "8–16 Feb", groupSize: "6 photographers",
+        locations: "Ranthambore National Park, Rajasthan, India",
+        species: ["Bengal tiger", "Sloth bear", "Indian leopard", "Painted stork"],
+        budget: { amount: "4800", currency: "USD", notes: "Per person, incl. park permits and jeep gypsies" },
+        links: [{ label: "Zone rotation & permit rules", url: "https://example.com/ranthambore-zones" }],
+        operators: [{ name: "Tiger Trails Safaris", url: "https://example.com/tigertrails", contact: "booking@example.com" }],
+        photos: [], refLinks: [],
+        notes: "Winter light is soft and golden by 9am. Dust in the air late season — clean sensors nightly."
+      },
+      {
+        id: uid(), title: "Hokkaido: Cranes & Snow Monkeys", status: "planned",
+        year: 2027, month: 1, dates: "20–29 Jan", groupSize: "7 photographers",
+        locations: "Tsurui-Ito Tancho Sanctuary, Kushiro\nJigokudani Monkey Park, Nagano",
+        species: ["Red-crowned crane", "Japanese macaque", "Steller's sea eagle"],
+        budget: { amount: "5900", currency: "USD", notes: "Per person, excl. flights to Tokyo/Kushiro" },
+        links: [], operators: [], photos: [], refLinks: [],
+        notes: "Sub-zero mornings for steam-rising onsen monkey shots. Bring hand warmers and spare batteries."
+      },
+      {
+        id: uid(), title: "Okavango Delta: Big Cats", status: "planned",
+        year: 2028, month: 6, dates: "10–20 Jun", groupSize: "6 photographers",
+        locations: "Okavango Delta, Botswana",
+        species: ["Lion", "Leopard", "African wild dog", "Elephant"],
+        budget: { amount: "8100", currency: "USD", notes: "Per person, fly-in camps, excl. international flights" },
+        links: [], operators: [{ name: "Delta Camps Photographic Safaris", url: "https://example.com/delta-camps", contact: "" }],
+        photos: [], refLinks: [],
+        notes: "Water levels highest — good for mokoro (canoe) level shooting."
+      },
+      {
+        id: uid(), title: "Antarctica: Penguins & Ice", status: "idea",
+        year: null, month: null, dates: "", groupSize: "",
+        locations: "Antarctic Peninsula (ship-based)",
+        species: ["Gentoo penguin", "Emperor penguin", "Leopard seal", "Humpback whale"],
+        budget: { amount: "", currency: "USD", notes: "" },
+        links: [], operators: [], photos: [], refLinks: [],
+        notes: "Chase early/late season for better light angles. Check expedition ship photography charters."
+      },
+      {
+        id: uid(), title: "Ethiopia: Omo Valley", status: "idea",
+        year: null, month: null, dates: "", groupSize: "",
+        locations: "Lower Omo Valley, Southern Ethiopia",
+        species: ["Hamar, Mursi & Karo communities (portraiture)", "Shoebill (side trip)"],
+        budget: { amount: "", currency: "USD", notes: "" },
+        links: [], operators: [], photos: [], refLinks: [],
+        notes: "Needs local fixer + community permissions for portrait work. Consider pairing with a shoebill boat trip."
+      }
+    ];
   }
-  function dayDiff(isoA, isoB) {
-    var a = parseISO(isoA), b = parseISO(isoB);
-    return Math.round((b - a) / 86400000);
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.trips)) return parsed;
+      }
+    } catch (e) { /* fall through to seed */ }
+    return { startYear: new Date().getFullYear(), trips: seedData() };
   }
-  function tripsOnDate(iso) {
-    return trips.filter(function (t) { return t.startDate <= iso && iso <= t.endDate; });
+
+  var state = loadState();
+  var draft = null;
+  var dragId = null;
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      toast("Couldn't save — storage may be full (try smaller photos).");
+    }
+  }
+
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2600);
   }
 
   // ---------- Rendering ----------
 
-  function renderYearJump() {
-    var sel = document.getElementById("yearJump");
-    sel.innerHTML = "";
-    var current = new Date().getFullYear();
-    for (var y = current - 2; y <= current + 10; y++) {
+  function render() {
+    renderYearRange();
+    renderSummary();
+    renderTray();
+    renderCalendar();
+    persist();
+  }
+
+  function renderYearRange() {
+    var sel = document.getElementById("yearRange");
+    if (!sel.dataset.populated) {
+      var current = new Date().getFullYear();
+      var opts = "";
+      for (var y = current - 5; y <= current + 15; y++) {
+        opts += '<option value="' + y + '">' + y + "–" + (y + 2) + "</option>";
+      }
+      sel.innerHTML = opts;
+      sel.dataset.populated = "1";
+    }
+    if (!sel.querySelector('option[value="' + state.startYear + '"]')) {
       var opt = document.createElement("option");
-      opt.value = y;
-      opt.textContent = y + " – " + (y + 2);
-      if (y === viewStartYear) opt.selected = true;
+      opt.value = state.startYear;
+      opt.textContent = state.startYear + "–" + (state.startYear + 2);
       sel.appendChild(opt);
     }
-    sel.onchange = function () {
-      viewStartYear = parseInt(sel.value, 10);
-      saveViewYear();
-      renderCalendar();
-    };
+    sel.value = state.startYear;
+  }
+
+  function renderSummary() {
+    var scheduled = state.trips.filter(function (t) { return t.year && t.month; });
+    var today = new Date();
+    var upcoming = scheduled
+      .filter(function (t) {
+        return t.year > today.getFullYear() || (t.year === today.getFullYear() && t.month >= today.getMonth() + 1);
+      })
+      .sort(function (a, b) { return (a.year - b.year) || (a.month - b.month); })[0];
+    var line = state.trips.length + " trip" + (state.trips.length === 1 ? "" : "s") + " logged";
+    if (upcoming) {
+      line += " &middot; next up: <strong>" + escapeHtml(upcoming.title) + "</strong> in " + MONTHS[upcoming.month - 1] + " " + upcoming.year;
+    }
+    document.getElementById("summaryLine").innerHTML = line;
+  }
+
+  function chipHtml(trip) {
+    var statusVar = "var(--status-" + trip.status + ")";
+    var loc = (trip.locations || "").split("\n")[0] || "";
+    return '<div class="chip" draggable="true" tabindex="0" role="button" ' +
+      'aria-label="' + escapeHtml(trip.title || "Untitled trip") + '" data-id="' + trip.id + '" ' +
+      'style="--status-color:' + statusVar + '">' +
+      '<span class="chip-title">' + escapeHtml(trip.title || "Untitled trip") + "</span>" +
+      (loc ? '<span class="chip-loc">' + escapeHtml(loc) + "</span>" : "") +
+      "</div>";
+  }
+
+  function renderTray() {
+    var unscheduled = state.trips.filter(function (t) { return !t.year || !t.month; });
+    document.getElementById("trayCount").textContent = unscheduled.length;
+    var row = document.getElementById("trayRow");
+    row.innerHTML = unscheduled.length
+      ? unscheduled.map(chipHtml).join("")
+      : '<div class="tray-empty">No unscheduled ideas — drag a trip here to take it off the calendar, or add a new one.</div>';
   }
 
   function renderCalendar() {
-    var root = document.getElementById("calendarRoot");
-    root.innerHTML = "";
-    var today = todayISO();
-    for (var yi = 0; yi < 3; yi++) {
-      var year = viewStartYear + yi;
-      var yearBlock = document.createElement("section");
-      yearBlock.className = "year-block";
-      var h2 = document.createElement("h2");
-      h2.textContent = year;
-      yearBlock.appendChild(h2);
-      var monthsGrid = document.createElement("div");
-      monthsGrid.className = "months-grid";
-      for (var m = 0; m < 12; m++) {
-        monthsGrid.appendChild(renderMonth(year, m, today));
-      }
-      yearBlock.appendChild(monthsGrid);
-      root.appendChild(yearBlock);
-    }
-    var jumpSel = document.getElementById("yearJump");
-    jumpSel.value = viewStartYear;
-  }
+    var cal = document.getElementById("cal");
+    var years = [state.startYear, state.startYear + 1, state.startYear + 2];
+    var today = new Date();
+    var html = '<div class="cal-corner"></div>';
 
-  function renderMonth(year, monthIdx, today) {
-    var monthEl = document.createElement("div");
-    monthEl.className = "month";
-    var h3 = document.createElement("h3");
-    h3.textContent = MONTH_NAMES[monthIdx] + " " + year;
-    monthEl.appendChild(h3);
-
-    var dowRow = document.createElement("div");
-    dowRow.className = "dow-row";
-    DOW.forEach(function (d) {
-      var el = document.createElement("div");
-      el.textContent = d;
-      dowRow.appendChild(el);
+    years.forEach(function (y) {
+      var count = state.trips.filter(function (t) { return t.year === y; }).length;
+      html += '<div class="cal-yearhead">' + y + '<span class="trip-count">' + count + ' trip' + (count === 1 ? "" : "s") + '</span></div>';
     });
-    monthEl.appendChild(dowRow);
 
-    var dayRow = document.createElement("div");
-    dayRow.className = "day-row";
-
-    var firstDow = new Date(year, monthIdx, 1).getDay();
-    var daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
-
-    for (var i = 0; i < firstDow; i++) {
-      var blank = document.createElement("div");
-      blank.className = "day-cell";
-      dayRow.appendChild(blank);
-    }
-
-    for (var day = 1; day <= daysInMonth; day++) {
-      var iso = toISODate(year, monthIdx, day);
-      dayRow.appendChild(renderDayCell(iso, day, today));
-    }
-
-    monthEl.appendChild(dayRow);
-    return monthEl;
-  }
-
-  function renderDayCell(iso, dayNum, today) {
-    var cell = document.createElement("div");
-    cell.className = "day-cell in-month";
-    if (iso === today) cell.classList.add("today");
-    cell.dataset.date = iso;
-
-    var num = document.createElement("div");
-    num.className = "daynum";
-    num.textContent = dayNum;
-    cell.appendChild(num);
-
-    tripsOnDate(iso).forEach(function (trip) {
-      var chip = document.createElement("div");
-      chip.className = "chip " + trip.status;
-      chip.textContent = (trip.startDate === iso ? "" : "…") + trip.title;
-      chip.title = trip.title + " (" + trip.startDate + " to " + trip.endDate + ")";
-      chip.draggable = true;
-      chip.addEventListener("click", function (e) {
-        e.stopPropagation();
-        openTripModal(trip.id);
+    for (var m = 1; m <= 12; m++) {
+      html += '<div class="cal-monthlabel">' + MONTHS[m - 1] + "</div>";
+      years.forEach(function (y) {
+        var isToday = y === today.getFullYear() && m === today.getMonth() + 1;
+        var tripsHere = state.trips.filter(function (t) { return t.year === y && t.month === m; });
+        html += '<div class="cell' + (isToday ? " is-today" : "") + '" data-year="' + y + '" data-month="' + m + '">' +
+          '<button class="cell-add" data-year="' + y + '" data-month="' + m + '" aria-label="Add trip in ' + MONTHS[m - 1] + " " + y + '">+</button>' +
+          '<div class="cell-chips">' + tripsHere.map(chipHtml).join("") + "</div>" +
+          "</div>";
       });
-      chip.addEventListener("dragstart", function (e) {
-        dragTripId = trip.id;
-        dragGrabOffsetDays = dayDiff(trip.startDate, iso);
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", trip.id);
-      });
-      chip.addEventListener("dragend", function () {
-        dragTripId = null;
-        dragGrabOffsetDays = null;
-      });
-      cell.appendChild(chip);
-    });
-
-    cell.addEventListener("mousedown", function (e) {
-      if (e.target !== cell && e.target !== num) return;
-      selecting = true;
-      selStartDate = iso;
-      selEndDate = iso;
-      highlightSelection();
-    });
-    cell.addEventListener("mouseenter", function () {
-      if (selecting) {
-        selEndDate = iso;
-        highlightSelection();
-      }
-    });
-    cell.addEventListener("click", function (e) {
-      if (e.target !== cell && e.target !== num) return;
-      if (tripsOnDate(iso).length === 0) {
-        openTripModal(null, iso, iso);
-      }
-    });
-    cell.addEventListener("dragover", function (e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-    });
-    cell.addEventListener("drop", function (e) {
-      e.preventDefault();
-      if (!dragTripId) return;
-      var trip = trips.find(function (t) { return t.id === dragTripId; });
-      if (!trip) return;
-      var duration = dayDiff(trip.startDate, trip.endDate);
-      var newStart = addDaysISO(iso, -dragGrabOffsetDays);
-      var newEnd = addDaysISO(newStart, duration);
-      trip.startDate = newStart;
-      trip.endDate = newEnd;
-      saveTrips();
-      renderCalendar();
-    });
-
-    return cell;
-  }
-
-  function highlightSelection() {
-    if (!selStartDate || !selEndDate) return;
-    var lo = selStartDate <= selEndDate ? selStartDate : selEndDate;
-    var hi = selStartDate <= selEndDate ? selEndDate : selStartDate;
-    document.querySelectorAll(".day-cell").forEach(function (c) {
-      var d = c.dataset.date;
-      if (d && d >= lo && d <= hi) c.classList.add("selecting");
-      else c.classList.remove("selecting");
-    });
-  }
-
-  document.addEventListener("mouseup", function () {
-    if (!selecting) return;
-    selecting = false;
-    document.querySelectorAll(".day-cell.selecting").forEach(function (c) { c.classList.remove("selecting"); });
-    if (selStartDate && selEndDate && selStartDate !== selEndDate) {
-      var lo = selStartDate <= selEndDate ? selStartDate : selEndDate;
-      var hi = selStartDate <= selEndDate ? selEndDate : selStartDate;
-      openTripModal(null, lo, hi);
     }
-    selStartDate = null;
-    selEndDate = null;
+    cal.innerHTML = html;
+  }
+
+  // ---------- Drag and drop ----------
+
+  document.addEventListener("dragstart", function (e) {
+    var chip = e.target.closest(".chip");
+    if (!chip) return;
+    dragId = chip.dataset.id;
+    chip.classList.add("dragging");
+    e.dataTransfer.setData("text/plain", dragId);
+    e.dataTransfer.effectAllowed = "move";
   });
 
-  // ---------- Modal ----------
+  document.addEventListener("dragend", function (e) {
+    var chip = e.target.closest(".chip");
+    if (chip) chip.classList.remove("dragging");
+  });
 
-  function repeatRow(listEl, placeholderA, placeholderB, valueA, valueB) {
-    var row = document.createElement("div");
-    row.className = "repeat-item";
-    var a = document.createElement("input");
-    a.type = "text";
-    a.placeholder = placeholderA;
-    a.value = valueA || "";
-    a.className = "field-a";
-    row.appendChild(a);
-    if (placeholderB !== null) {
-      var b = document.createElement("input");
-      b.type = "text";
-      b.placeholder = placeholderB;
-      b.value = valueB || "";
-      b.className = "field-b";
-      row.appendChild(b);
-    }
-    var rm = document.createElement("button");
-    rm.type = "button";
-    rm.textContent = "✕";
-    rm.onclick = function () { row.remove(); };
-    row.appendChild(rm);
-    listEl.appendChild(row);
-    return row;
-  }
-
-  function readRepeatList(listEl, twoField) {
-    var out = [];
-    listEl.querySelectorAll(".repeat-item").forEach(function (row) {
-      var a = row.querySelector(".field-a").value.trim();
-      if (!a) return;
-      if (twoField) {
-        var b = row.querySelector(".field-b").value.trim();
-        out.push({ name: a, url: b });
-      } else {
-        out.push(a);
-      }
-    });
-    return out;
-  }
-
-  function renderPhotoThumbs() {
-    var wrap = document.getElementById("photoThumbs");
-    wrap.innerHTML = "";
-    document.querySelectorAll("#photosList .field-a").forEach(function (input) {
-      var url = input.value.trim();
-      if (!url) return;
-      var img = document.createElement("img");
-      img.src = url;
-      img.onerror = function () { img.style.display = "none"; };
-      wrap.appendChild(img);
-    });
-  }
-
-  function openTripModal(tripId, prefillStart, prefillEnd) {
-    editingTripId = tripId;
-    var trip = tripId ? trips.find(function (t) { return t.id === tripId; }) : null;
-
-    document.getElementById("modalTitle").textContent = trip ? "Edit Trip" : "New Trip";
-    document.getElementById("f-title").value = trip ? trip.title : "";
-    document.getElementById("f-start").value = trip ? trip.startDate : (prefillStart || todayISO());
-    document.getElementById("f-end").value = trip ? trip.endDate : (prefillEnd || prefillStart || todayISO());
-    document.getElementById("f-status").value = trip ? trip.status : "idea";
-    document.getElementById("f-budget").value = trip ? (trip.budget || "") : "";
-    document.getElementById("f-species").value = trip ? (trip.species || []).join(", ") : "";
-    document.getElementById("f-notes").value = trip ? (trip.notes || "") : "";
-
-    var linksList = document.getElementById("linksList");
-    linksList.innerHTML = "";
-    (trip ? trip.links || [] : []).forEach(function (l) {
-      repeatRow(linksList, "Label", "https://...", l.name, l.url);
-    });
-
-    var opsList = document.getElementById("operatorsList");
-    opsList.innerHTML = "";
-    (trip ? trip.operators || [] : []).forEach(function (o) {
-      repeatRow(opsList, "Operator name", "https://...", o.name, o.url);
-    });
-
-    var photosList = document.getElementById("photosList");
-    photosList.innerHTML = "";
-    (trip ? trip.photos || [] : []).forEach(function (p) {
-      var row = repeatRow(photosList, "https://image-url...", null, p);
-      row.querySelector(".field-a").addEventListener("input", renderPhotoThumbs);
-    });
-    renderPhotoThumbs();
-
-    document.getElementById("deleteTripBtn").style.display = trip ? "inline-block" : "none";
-    document.getElementById("modalOverlay").classList.add("open");
-  }
-
-  function closeModal() {
-    document.getElementById("modalOverlay").classList.remove("open");
-    editingTripId = null;
-  }
-
-  document.getElementById("addLinkBtn").onclick = function () {
-    repeatRow(document.getElementById("linksList"), "Label", "https://...");
-  };
-  document.getElementById("addOperatorBtn").onclick = function () {
-    repeatRow(document.getElementById("operatorsList"), "Operator name", "https://...");
-  };
-  document.getElementById("addPhotoBtn").onclick = function () {
-    var row = repeatRow(document.getElementById("photosList"), "https://image-url...", null);
-    row.querySelector(".field-a").addEventListener("input", renderPhotoThumbs);
-  };
-
-  document.getElementById("cancelBtn").onclick = closeModal;
-
-  document.getElementById("deleteTripBtn").onclick = function () {
-    if (!editingTripId) return;
-    if (!confirm("Delete this trip?")) return;
-    trips = trips.filter(function (t) { return t.id !== editingTripId; });
-    saveTrips();
-    closeModal();
-    renderCalendar();
-  };
-
-  document.getElementById("tripForm").addEventListener("submit", function (e) {
+  document.addEventListener("dragover", function (e) {
+    var dropzone = e.target.closest(".cell, #trayRow");
+    if (!dropzone) return;
     e.preventDefault();
-    var start = document.getElementById("f-start").value;
-    var end = document.getElementById("f-end").value;
-    if (end < start) { var tmp = start; start = end; end = tmp; }
-
-    var species = document.getElementById("f-species").value
-      .split(",").map(function (s) { return s.trim(); }).filter(Boolean);
-
-    var data = {
-      title: document.getElementById("f-title").value.trim() || "Untitled trip",
-      startDate: start,
-      endDate: end,
-      status: document.getElementById("f-status").value,
-      budget: Number(document.getElementById("f-budget").value) || 0,
-      species: species,
-      links: readRepeatList(document.getElementById("linksList"), true),
-      operators: readRepeatList(document.getElementById("operatorsList"), true),
-      photos: readRepeatList(document.getElementById("photosList"), false),
-      notes: document.getElementById("f-notes").value
-    };
-
-    if (editingTripId) {
-      var trip = trips.find(function (t) { return t.id === editingTripId; });
-      Object.assign(trip, data);
-    } else {
-      data.id = uid();
-      trips.push(data);
-    }
-    saveTrips();
-    closeModal();
-    renderCalendar();
+    e.dataTransfer.dropEffect = "move";
+    dropzone.classList.add("drag-over");
   });
 
-  document.getElementById("newTripBtn").onclick = function () {
-    openTripModal(null, todayISO(), todayISO());
-  };
+  document.addEventListener("dragleave", function (e) {
+    var dropzone = e.target.closest(".cell, #trayRow");
+    if (dropzone) dropzone.classList.remove("drag-over");
+  });
 
-  document.getElementById("modalOverlay").addEventListener("mousedown", function (e) {
-    if (e.target === this) closeModal();
+  document.addEventListener("drop", function (e) {
+    var dropzone = e.target.closest(".cell, #trayRow");
+    if (!dropzone) return;
+    e.preventDefault();
+    dropzone.classList.remove("drag-over");
+    var id = e.dataTransfer.getData("text/plain") || dragId;
+    var trip = state.trips.find(function (t) { return t.id === id; });
+    if (!trip) return;
+    var y = dropzone.dataset.year ? parseInt(dropzone.dataset.year, 10) : null;
+    var m = dropzone.dataset.month ? parseInt(dropzone.dataset.month, 10) : null;
+    trip.year = y || null;
+    trip.month = m || null;
+    dragId = null;
+    render();
+  });
+
+  // ---------- Click handling (chips, add buttons) ----------
+
+  document.addEventListener("click", function (e) {
+    var addBtn = e.target.closest(".cell-add");
+    if (addBtn) {
+      openModal(blankTrip(parseInt(addBtn.dataset.year, 10), parseInt(addBtn.dataset.month, 10)));
+      return;
+    }
+    var chip = e.target.closest(".chip");
+    if (chip) {
+      var trip = state.trips.find(function (t) { return t.id === chip.dataset.id; });
+      if (trip) openModal(trip);
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("chip")) {
+      e.preventDefault();
+      var trip = state.trips.find(function (t) { return t.id === e.target.dataset.id; });
+      if (trip) openModal(trip);
+    }
   });
 
   // ---------- Year navigation ----------
 
-  document.getElementById("prevYearsBtn").onclick = function () {
-    viewStartYear -= 1;
-    saveViewYear();
-    renderCalendar();
-  };
-  document.getElementById("nextYearsBtn").onclick = function () {
-    viewStartYear += 1;
-    saveViewYear();
-    renderCalendar();
-  };
+  document.getElementById("prevYear").addEventListener("click", function () { state.startYear--; render(); });
+  document.getElementById("nextYear").addEventListener("click", function () { state.startYear++; render(); });
+  document.getElementById("todayBtn").addEventListener("click", function () {
+    state.startYear = new Date().getFullYear();
+    render();
+  });
+  document.getElementById("yearRange").addEventListener("change", function () {
+    state.startYear = parseInt(this.value, 10);
+    render();
+  });
+
+  // ---------- New trip ----------
+
+  document.getElementById("newTripBtn").addEventListener("click", function () {
+    openModal(blankTrip(null, null));
+  });
+
+  // ---------- Export / Import ----------
+
+  document.getElementById("exportBtn").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "expedition-planner-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Exported to JSON file.");
+  });
+
+  document.getElementById("importBtn").addEventListener("click", function () {
+    document.getElementById("importFile").click();
+  });
+
+  document.getElementById("importFile").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        if (!parsed || !Array.isArray(parsed.trips)) throw new Error("bad shape");
+        state = parsed;
+        if (!state.startYear) state.startYear = new Date().getFullYear();
+        render();
+        toast("Imported " + state.trips.length + " trips.");
+      } catch (err) {
+        toast("Import failed — that doesn't look like a valid export file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
 
   // ---------- CSV export/import (Excel-compatible) ----------
 
+  var CSV_HEADERS = ["Title","Status","Year","Month","Dates","Group Size","Locations","Key Species","Budget Amount","Budget Currency","Budget Notes","Links","Operators","Reference Links","Notes"];
+
   function csvEscape(field) {
     var s = field === undefined || field === null ? "" : String(field);
-    if (/[",\r\n]/.test(s)) {
-      s = '"' + s.replace(/"/g, '""') + '"';
-    }
+    if (/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
 
-  function joinLinks(links) {
-    return (links || []).map(function (l) { return l.name + " - " + l.url; }).join("; ");
-  }
-  function joinOperators(ops) {
-    return (ops || []).map(function (o) { return o.name + " - " + o.url; }).join("; ");
-  }
-  function splitPairList(str) {
-    if (!str) return [];
-    return str.split(";").map(function (s) { return s.trim(); }).filter(Boolean).map(function (pair) {
-      var idx = pair.indexOf(" - ");
-      if (idx === -1) return { name: pair, url: "" };
-      return { name: pair.slice(0, idx).trim(), url: pair.slice(idx + 3).trim() };
-    });
+  function joinPairs(items, keys) {
+    return (items || []).map(function (item) {
+      var parts = keys.map(function (k) { return item[k] || ""; });
+      while (parts.length && !parts[parts.length - 1]) parts.pop();
+      return parts.join(" - ");
+    }).join("; ");
   }
 
-  var CSV_HEADERS = ["Title","Start Date","End Date","Status","Budget","Key Species","Links","Tour Operators","Inspiration Photos","Notes"];
+  function splitPairs(str, keys) {
+    if (!str) return [];
+    return str.split(";").map(function (s) { return s.trim(); }).filter(Boolean).map(function (chunk) {
+      var parts = chunk.split(" - ");
+      var obj = {};
+      keys.forEach(function (k, i) {
+        obj[k] = i === keys.length - 1 ? parts.slice(i).join(" - ").trim() : (parts[i] || "").trim();
+      });
+      return obj;
+    });
+  }
 
   function exportCsv() {
     var lines = [CSV_HEADERS.map(csvEscape).join(",")];
-    trips.forEach(function (t) {
+    state.trips.forEach(function (t) {
       lines.push([
         csvEscape(t.title),
-        csvEscape(t.startDate),
-        csvEscape(t.endDate),
         csvEscape(t.status),
-        csvEscape(t.budget),
+        csvEscape(t.year || ""),
+        csvEscape(t.month || ""),
+        csvEscape(t.dates),
+        csvEscape(t.groupSize),
+        csvEscape(t.locations),
         csvEscape((t.species || []).join("; ")),
-        csvEscape(joinLinks(t.links)),
-        csvEscape(joinOperators(t.operators)),
-        csvEscape((t.photos || []).join("; ")),
+        csvEscape(t.budget && t.budget.amount),
+        csvEscape(t.budget && t.budget.currency),
+        csvEscape(t.budget && t.budget.notes),
+        csvEscape(joinPairs(t.links, ["label", "url"])),
+        csvEscape(joinPairs(t.operators, ["name", "url", "contact"])),
+        csvEscape(joinPairs(t.refLinks, ["label", "url"])),
         csvEscape(t.notes)
       ].join(","));
     });
-    var csvBody = lines.join("\r\n");
-    var blob = new Blob(["﻿" + csvBody], { type: "text/csv;charset=utf-8;" });
-    downloadBlob(blob, "expedition-planner-trips.csv");
+    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "expedition-planner-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Exported to CSV file.");
   }
 
   function parseCsv(text) {
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    var rows = [];
-    var row = [];
-    var field = "";
-    var inQuotes = false;
+    var rows = [], row = [], field = "", inQuotes = false;
     for (var i = 0; i < text.length; i++) {
       var c = text[i];
       if (inQuotes) {
-        if (c === '"') {
-          if (text[i + 1] === '"') { field += '"'; i++; }
-          else { inQuotes = false; }
-        } else {
-          field += c;
-        }
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; } }
+        else field += c;
       } else {
-        if (c === '"') { inQuotes = true; }
+        if (c === '"') inQuotes = true;
         else if (c === ",") { row.push(field); field = ""; }
         else if (c === "\r") { /* skip */ }
         else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-        else { field += c; }
+        else field += c;
       }
     }
     if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
@@ -676,7 +1035,7 @@
 
   function importCsvText(text) {
     var rows = parseCsv(text);
-    if (rows.length < 2) { alert("No trip rows found in CSV."); return; }
+    if (rows.length < 2) { toast("No trip rows found in that CSV."); return; }
     var header = rows[0].map(function (h) { return h.trim().toLowerCase(); });
     var idx = {};
     header.forEach(function (h, i) { idx[h] = i; });
@@ -685,40 +1044,37 @@
       return {
         id: uid(),
         title: r[idx["title"]] || "Untitled trip",
-        startDate: r[idx["start date"]] || todayISO(),
-        endDate: r[idx["end date"]] || r[idx["start date"]] || todayISO(),
         status: (r[idx["status"]] || "idea").toLowerCase(),
-        budget: Number(r[idx["budget"]]) || 0,
+        year: r[idx["year"]] ? parseInt(r[idx["year"]], 10) : null,
+        month: r[idx["month"]] ? parseInt(r[idx["month"]], 10) : null,
+        dates: r[idx["dates"]] || "",
+        groupSize: r[idx["group size"]] || "",
+        locations: r[idx["locations"]] || "",
         species: (r[idx["key species"]] || "").split(";").map(function (s) { return s.trim(); }).filter(Boolean),
-        links: splitPairList(r[idx["links"]]),
-        operators: splitPairList(r[idx["tour operators"]]),
-        photos: (r[idx["inspiration photos"]] || "").split(";").map(function (s) { return s.trim(); }).filter(Boolean),
+        budget: {
+          amount: r[idx["budget amount"]] || "",
+          currency: r[idx["budget currency"]] || "USD",
+          notes: r[idx["budget notes"]] || ""
+        },
+        links: splitPairs(r[idx["links"]], ["label", "url"]),
+        operators: splitPairs(r[idx["operators"]], ["name", "url", "contact"]),
+        photos: [],
+        refLinks: splitPairs(r[idx["reference links"]], ["label", "url"]),
         notes: r[idx["notes"]] || ""
       };
     });
 
-    if (!confirm("Import " + imported.length + " trip(s) from CSV? This will be added to your current trips.")) return;
-    trips = trips.concat(imported);
-    saveTrips();
-    renderCalendar();
+    if (!confirm("Import " + imported.length + " trip(s) from CSV? They'll be added to your current trips.")) return;
+    state.trips = state.trips.concat(imported);
+    render();
+    toast("Imported " + imported.length + " trip(s) from CSV.");
   }
 
-  function downloadBlob(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
-  document.getElementById("exportCsvBtn").onclick = exportCsv;
-  document.getElementById("importCsvBtn").onclick = function () {
-    document.getElementById("csvFileInput").click();
-  };
-  document.getElementById("csvFileInput").addEventListener("change", function (e) {
+  document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
+  document.getElementById("importCsvBtn").addEventListener("click", function () {
+    document.getElementById("importCsvFile").click();
+  });
+  document.getElementById("importCsvFile").addEventListener("change", function (e) {
     var file = e.target.files[0];
     if (!file) return;
     var reader = new FileReader();
@@ -727,43 +1083,322 @@
     e.target.value = "";
   });
 
-  // ---------- JSON backup/restore ----------
+  // ---------- Modal ----------
 
-  document.getElementById("exportJsonBtn").onclick = function () {
-    var payload = { version: 1, exportedAt: new Date().toISOString(), trips: trips };
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8;" });
-    downloadBlob(blob, "expedition-planner-backup.json");
-  };
-  document.getElementById("importJsonBtn").onclick = function () {
-    document.getElementById("jsonFileInput").click();
-  };
-  document.getElementById("jsonFileInput").addEventListener("change", function (e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function () {
-      try {
-        var payload = JSON.parse(reader.result);
-        var incoming = Array.isArray(payload) ? payload : payload.trips;
-        if (!Array.isArray(incoming)) throw new Error("Invalid format");
-        if (!confirm("Restore from backup? This will REPLACE all " + trips.length + " current trip(s) with " + incoming.length + " from the file.")) return;
-        trips = incoming.map(function (t) {
-          return Object.assign({ id: uid(), links: [], operators: [], photos: [], species: [] }, t);
-        });
-        saveTrips();
-        renderCalendar();
-      } catch (err) {
-        alert("Could not read backup file: " + err.message);
-      }
-    };
-    reader.readAsText(file, "UTF-8");
-    e.target.value = "";
+  var modalBackdrop = document.getElementById("modalBackdrop");
+  var modalDirty = false;
+
+  function fieldGroupOverview(t) {
+    return '<section class="field-group">' +
+      '<p class="group-label">Overview</p>' +
+      '<div class="row">' +
+        '<div class="field"><label for="f-title">Trip title</label>' +
+        '<input type="text" id="f-title" value="' + escapeHtml(t.title) + '" placeholder="e.g. Svalbard: Polar Bears &amp; Pack Ice" /></div>' +
+      '</div>' +
+      '<div class="row">' +
+        '<div class="field"><label for="f-status">Status</label>' +
+        '<select id="f-status">' + STATUSES.map(function (s) {
+          return '<option value="' + s.value + '"' + (t.status === s.value ? " selected" : "") + ">" + s.label + "</option>";
+        }).join("") + "</select></div>" +
+        '<div class="field"><label for="f-year">Year</label>' +
+        '<input type="number" id="f-year" value="' + (t.year || "") + '" placeholder="Unscheduled" /></div>' +
+        '<div class="field"><label for="f-month">Month</label>' +
+        '<select id="f-month"><option value="">—</option>' + MONTHS.map(function (mn, i) {
+          return '<option value="' + (i + 1) + '"' + (t.month === i + 1 ? " selected" : "") + ">" + mn + "</option>";
+        }).join("") + "</select></div>" +
+      "</div>" +
+      '<div class="row">' +
+        '<div class="field"><label for="f-dates">Specific dates</label>' +
+        '<input type="text" id="f-dates" value="' + escapeHtml(t.dates) + '" placeholder="e.g. 14–24 Mar" /></div>' +
+        '<div class="field"><label for="f-group">Group size</label>' +
+        '<input type="text" id="f-group" value="' + escapeHtml(t.groupSize) + '" placeholder="e.g. 6 photographers" /></div>' +
+      "</div>" +
+    "</section>";
+  }
+
+  function fieldGroupLocSpecies(t) {
+    return '<section class="field-group">' +
+      '<p class="group-label">Locations &amp; key species</p>' +
+      '<div class="field"><label for="f-locations">Locations (one per line)</label>' +
+      '<textarea id="f-locations" placeholder="e.g. Longyearbyen, Svalbard">' + escapeHtml(t.locations) + "</textarea></div>" +
+      '<div class="field" style="margin-top:10px"><label for="f-species-input">Key species</label>' +
+      '<input type="text" id="f-species-input" placeholder="Type a species and press Enter" />' +
+      '<div class="tags" id="speciesTags"></div></div>' +
+    "</section>";
+  }
+
+  function fieldGroupBudget(t) {
+    return '<section class="field-group">' +
+      '<p class="group-label">Budget</p>' +
+      '<div class="budget-row">' +
+        '<input type="number" id="f-budget-amount" value="' + escapeHtml(t.budget.amount) + '" placeholder="Amount" />' +
+        '<select id="f-budget-currency">' + ["USD","EUR","GBP","AUD","CAD","JPY","ZAR","Other"].map(function (c) {
+          return '<option value="' + c + '"' + (t.budget.currency === c ? " selected" : "") + ">" + c + "</option>";
+        }).join("") + "</select>" +
+        '<input type="text" id="f-budget-notes" value="' + escapeHtml(t.budget.notes) + '" placeholder="Notes, e.g. per person excl. flights" />' +
+      "</div>" +
+    "</section>";
+  }
+
+  function repeatListHtml(items, kind) {
+    if (kind === "link" || kind === "refLink") {
+      return items.map(function (item, i) {
+        return '<div class="repeat-row" data-kind="' + kind + '" data-index="' + i + '">' +
+          '<input type="text" class="rl-label" value="' + escapeHtml(item.label) + '" placeholder="Label" />' +
+          '<input type="url" class="rl-url" value="' + escapeHtml(item.url) + '" placeholder="https://…" />' +
+          '<button class="icon-btn" data-action="remove-' + kind + '" data-index="' + i + '" aria-label="Remove">&times;</button>' +
+        "</div>";
+      }).join("");
+    }
+    // operators
+    return items.map(function (item, i) {
+      return '<div class="repeat-row" data-kind="operator" data-index="' + i + '">' +
+        '<input type="text" class="op-name" value="' + escapeHtml(item.name) + '" placeholder="Operator name" />' +
+        '<input type="url" class="op-url" value="' + escapeHtml(item.url) + '" placeholder="Website" />' +
+        '<input type="text" class="op-contact" value="' + escapeHtml(item.contact) + '" placeholder="Contact" />' +
+        '<button class="icon-btn" data-action="remove-operator" data-index="' + i + '" aria-label="Remove">&times;</button>' +
+      "</div>";
+    }).join("");
+  }
+
+  function fieldGroupLinks(t) {
+    return '<section class="field-group">' +
+      '<p class="group-label">Useful links</p>' +
+      '<div id="linkList">' + repeatListHtml(t.links, "link") + "</div>" +
+      '<button class="add-row-btn" data-action="add-link">+ Add link</button>' +
+    "</section>";
+  }
+
+  function fieldGroupOperators(t) {
+    return '<section class="field-group">' +
+      '<p class="group-label">Tour operators</p>' +
+      '<div id="operatorList">' + repeatListHtml(t.operators, "operator") + "</div>" +
+      '<button class="add-row-btn" data-action="add-operator">+ Add operator</button>' +
+    "</section>";
+  }
+
+  function fieldGroupInspiration(t) {
+    var photosHtml = t.photos.map(function (p, i) {
+      return '<div class="photo-card" data-index="' + i + '">' +
+        '<img src="' + p.dataUrl + '" data-action="zoom" alt="' + escapeHtml(p.caption || "Inspiration photo") + '" />' +
+        '<input type="text" class="photo-caption" value="' + escapeHtml(p.caption) + '" placeholder="Caption" data-index="' + i + '" />' +
+        '<button class="icon-btn" data-action="remove-photo" data-index="' + i + '">Remove</button>' +
+      "</div>";
+    }).join("");
+    return '<section class="field-group">' +
+      '<p class="group-label">Inspiration</p>' +
+      '<label class="upload-btn">&uarr; Upload photos<input type="file" id="photoUpload" accept="image/*" multiple /></label>' +
+      '<div class="photo-gallery" id="photoGallery">' + photosHtml + "</div>" +
+      '<div style="margin-top:14px"><label style="font-size:11.5px;color:var(--ink-soft)">Reference links (portfolios, galleries)</label>' +
+      '<div id="refLinkList">' + repeatListHtml(t.refLinks, "refLink") + "</div>" +
+      '<button class="add-row-btn" data-action="add-refLink">+ Add reference link</button></div>' +
+    "</section>";
+  }
+
+  function fieldGroupNotes(t) {
+    return '<section class="field-group">' +
+      '<p class="group-label">Notes</p>' +
+      '<textarea id="f-notes" placeholder="Itinerary ideas, best light times, gear reminders…">' + escapeHtml(t.notes) + "</textarea>" +
+    "</section>";
+  }
+
+  function renderSpeciesTags() {
+    var wrap = document.getElementById("speciesTags");
+    wrap.innerHTML = draft.species.map(function (sp, i) {
+      return '<span class="tag">' + escapeHtml(sp) + '<button data-action="remove-species" data-index="' + i + '" aria-label="Remove ' + escapeHtml(sp) + '">&times;</button></span>';
+    }).join("");
+  }
+
+  function renderModalBody() {
+    var body = document.getElementById("modalBody");
+    body.innerHTML =
+      fieldGroupOverview(draft) +
+      fieldGroupLocSpecies(draft) +
+      fieldGroupBudget(draft) +
+      fieldGroupLinks(draft) +
+      fieldGroupOperators(draft) +
+      fieldGroupInspiration(draft) +
+      fieldGroupNotes(draft);
+    renderSpeciesTags();
+  }
+
+  function openModal(trip) {
+    draft = JSON.parse(JSON.stringify(trip));
+    modalDirty = false;
+    document.getElementById("modalTitle").textContent = trip.title ? "Edit trip" : "New trip";
+    document.getElementById("deleteTripBtn").style.visibility = state.trips.some(function (t) { return t.id === draft.id; }) ? "visible" : "hidden";
+    renderModalBody();
+    modalBackdrop.hidden = false;
+    setTimeout(function () {
+      var titleInput = document.getElementById("f-title");
+      if (titleInput) titleInput.focus();
+    }, 0);
+  }
+
+  function closeModalConfirmed() {
+    modalBackdrop.hidden = true;
+    draft = null;
+  }
+
+  function attemptClose() {
+    if (modalDirty && !confirm("Discard unsaved changes to this trip?")) return;
+    closeModalConfirmed();
+  }
+
+  document.getElementById("modalCloseBtn").addEventListener("click", attemptClose);
+  document.getElementById("cancelTripBtn").addEventListener("click", attemptClose);
+  modalBackdrop.addEventListener("click", function (e) {
+    if (e.target === modalBackdrop) attemptClose();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !modalBackdrop.hidden) attemptClose();
   });
 
-  // ---------- Init ----------
+  document.getElementById("modalBody").addEventListener("input", function () { modalDirty = true; });
 
-  renderYearJump();
-  renderCalendar();
+  // species tag input
+  document.getElementById("modalBody").addEventListener("keydown", function (e) {
+    if (e.target.id === "f-species-input" && (e.key === "Enter" || e.key === ",")) {
+      e.preventDefault();
+      var val = e.target.value.trim().replace(/,$/, "");
+      if (val) {
+        draft.species.push(val);
+        e.target.value = "";
+        renderSpeciesTags();
+        modalDirty = true;
+      }
+    }
+  });
+
+  // delegated actions inside modal body
+  document.getElementById("modalBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) {
+      if (e.target.dataset.action === "zoom") openLightbox(e.target.src);
+      return;
+    }
+    var action = btn.dataset.action;
+    var idx = btn.dataset.index !== undefined ? parseInt(btn.dataset.index, 10) : null;
+    modalDirty = true;
+
+    if (action === "remove-species") { draft.species.splice(idx, 1); renderSpeciesTags(); }
+    else if (action === "add-link") { draft.links.push({ label: "", url: "" }); renderRepeatSection("linkList", draft.links, "link"); }
+    else if (action === "remove-link") { draft.links.splice(idx, 1); renderRepeatSection("linkList", draft.links, "link"); }
+    else if (action === "add-operator") { draft.operators.push({ name: "", url: "", contact: "" }); renderRepeatSection("operatorList", draft.operators, "operator"); }
+    else if (action === "remove-operator") { draft.operators.splice(idx, 1); renderRepeatSection("operatorList", draft.operators, "operator"); }
+    else if (action === "add-refLink") { draft.refLinks.push({ label: "", url: "" }); renderRepeatSection("refLinkList", draft.refLinks, "refLink"); }
+    else if (action === "remove-refLink") { draft.refLinks.splice(idx, 1); renderRepeatSection("refLinkList", draft.refLinks, "refLink"); }
+    else if (action === "remove-photo") { draft.photos.splice(idx, 1); renderPhotoGallery(); }
+  });
+
+  document.getElementById("modalBody").addEventListener("click", function (e) {
+    if (e.target.dataset.action === "zoom") openLightbox(e.target.src);
+  });
+
+  function renderRepeatSection(containerId, items, kind) {
+    document.getElementById(containerId).innerHTML = repeatListHtml(items, kind);
+  }
+
+  function renderPhotoGallery() {
+    var gallery = document.getElementById("photoGallery");
+    gallery.innerHTML = draft.photos.map(function (p, i) {
+      return '<div class="photo-card" data-index="' + i + '">' +
+        '<img src="' + p.dataUrl + '" data-action="zoom" alt="' + escapeHtml(p.caption || "Inspiration photo") + '" />' +
+        '<input type="text" class="photo-caption" value="' + escapeHtml(p.caption) + '" placeholder="Caption" data-index="' + i + '" />' +
+        '<button class="icon-btn" data-action="remove-photo" data-index="' + i + '">Remove</button>' +
+      "</div>";
+    }).join("");
+  }
+
+  document.getElementById("modalBody").addEventListener("input", function (e) {
+    if (e.target.classList.contains("photo-caption")) {
+      draft.photos[parseInt(e.target.dataset.index, 10)].caption = e.target.value;
+    }
+  });
+
+  document.body.addEventListener("change", function (e) {
+    if (e.target.id === "photoUpload") {
+      var files = Array.prototype.slice.call(e.target.files);
+      var remaining = files.length;
+      if (!remaining) return;
+      files.forEach(function (file) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          draft.photos.push({ dataUrl: reader.result, caption: "" });
+          modalDirty = true;
+          renderPhotoGallery();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  });
+
+  function openLightbox(src) {
+    document.getElementById("lightboxImg").src = src;
+    document.getElementById("lightbox").hidden = false;
+  }
+  document.getElementById("lightbox").addEventListener("click", function () {
+    this.hidden = true;
+    document.getElementById("lightboxImg").src = "";
+  });
+
+  function collectRepeatRows(containerId, fields) {
+    var rows = document.querySelectorAll("#" + containerId + " .repeat-row");
+    return Array.prototype.map.call(rows, function (row) {
+      var obj = {};
+      fields.forEach(function (f) {
+        var el = row.querySelector("." + f.cls);
+        obj[f.key] = el ? el.value.trim() : "";
+      });
+      return obj;
+    });
+  }
+
+  document.getElementById("saveTripBtn").addEventListener("click", function () {
+    var title = document.getElementById("f-title").value.trim();
+    if (!title) {
+      toast("Give the trip a title before saving.");
+      document.getElementById("f-title").focus();
+      return;
+    }
+    draft.title = title;
+    draft.status = document.getElementById("f-status").value;
+    var yearVal = document.getElementById("f-year").value;
+    draft.year = yearVal ? parseInt(yearVal, 10) : null;
+    var monthVal = document.getElementById("f-month").value;
+    draft.month = monthVal ? parseInt(monthVal, 10) : null;
+    draft.dates = document.getElementById("f-dates").value.trim();
+    draft.groupSize = document.getElementById("f-group").value.trim();
+    draft.locations = document.getElementById("f-locations").value;
+    draft.budget = {
+      amount: document.getElementById("f-budget-amount").value.trim(),
+      currency: document.getElementById("f-budget-currency").value,
+      notes: document.getElementById("f-budget-notes").value.trim()
+    };
+    draft.links = collectRepeatRows("linkList", [{ key: "label", cls: "rl-label" }, { key: "url", cls: "rl-url" }]);
+    draft.operators = collectRepeatRows("operatorList", [{ key: "name", cls: "op-name" }, { key: "url", cls: "op-url" }, { key: "contact", cls: "op-contact" }]);
+    draft.refLinks = collectRepeatRows("refLinkList", [{ key: "label", cls: "rl-label" }, { key: "url", cls: "rl-url" }]);
+    draft.notes = document.getElementById("f-notes").value;
+
+    var existingIdx = state.trips.findIndex(function (t) { return t.id === draft.id; });
+    if (existingIdx >= 0) state.trips[existingIdx] = draft;
+    else state.trips.push(draft);
+
+    modalDirty = false;
+    closeModalConfirmed();
+    render();
+    toast("Saved " + title + ".");
+  });
+
+  document.getElementById("deleteTripBtn").addEventListener("click", function () {
+    if (!confirm("Delete this trip? This can't be undone.")) return;
+    state.trips = state.trips.filter(function (t) { return t.id !== draft.id; });
+    closeModalConfirmed();
+    render();
+    toast("Trip deleted.");
+  });
+
+  render();
 })();
 </script>
 </body>
