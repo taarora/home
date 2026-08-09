@@ -116,6 +116,23 @@
     font-size: 13.5px;
   }
   .masthead-title p strong { color: var(--ink); font-weight: 600; }
+  .sync-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 8px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+  }
+  .sync-badge.synced { color: var(--status-confirmed); border-color: color-mix(in srgb, var(--status-confirmed) 40%, var(--rule-strong)); }
+  .sync-badge.saving { color: var(--status-planned); }
+  .sync-badge.offline { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--rule-strong)); }
+  .sync-badge.local { color: var(--ink-faint); }
 
   .masthead-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -659,6 +676,7 @@
       <span class="eyebrow">Field Log · Photography Trips</span>
       <h1>Expedition Planner</h1>
       <p id="summaryLine">Loading&hellip;</p>
+      <span id="syncBadge" class="sync-badge local">Local only</span>
     </div>
     <div class="masthead-actions">
       <div class="view-toggle" role="tablist" aria-label="Switch view">
@@ -957,12 +975,106 @@
   var wkFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
   var calFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
 
+  // Server sync (Tailscale/one-source-of-truth mode). When the app is served by
+  // server.py, `SYNC.enabled` flips on and the server's trips.json becomes the
+  // source of truth; localStorage is kept only as an offline cache. On the static
+  // GitHub Pages build there is no /api, so SYNC stays off and it's localStorage-only.
+  var SYNC = { enabled: false, online: false, rev: null, saving: false, pending: false };
+  var applyingRemote = false;  // true while adopting server state (suppresses re-save)
+  var saveTimer = null;
+
   function persist() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       toast("Couldn't save — storage may be full (try smaller photos).");
     }
+    if (SYNC.enabled && !applyingRemote) scheduleServerSave();
+  }
+
+  function scheduleServerSave() {
+    SYNC.pending = true;
+    updateSyncBadge();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(pushToServer, 600);
+  }
+
+  function pushToServer() {
+    if (!SYNC.enabled) return;
+    if (SYNC.saving) { SYNC.pending = true; return; }
+    SYNC.saving = true; SYNC.pending = false; updateSyncBadge();
+    fetch("api/state", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rev: SYNC.rev, state: state })
+    })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (d) {
+        SYNC.rev = d.rev; SYNC.saving = false; SYNC.online = true; updateSyncBadge();
+        if (SYNC.pending) scheduleServerSave();
+      })
+      .catch(function () {
+        SYNC.saving = false; SYNC.online = false; SYNC.pending = true; updateSyncBadge();
+      });
+  }
+
+  function pollServer() {
+    if (!SYNC.enabled) return;
+    fetch("api/state", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (d) {
+        SYNC.online = true;
+        // Only adopt a newer server rev when we have no unsaved local edits and the
+        // user isn't mid-interaction (modal open / dragging).
+        var safe = d.rev && d.rev !== SYNC.rev && !SYNC.pending && !SYNC.saving &&
+          modalBackdrop.hidden && !dragId;
+        if (safe && d.state && Array.isArray(d.state.trips)) {
+          applyingRemote = true;
+          state = normalizeState(d.state);
+          SYNC.rev = d.rev;
+          render();
+          applyingRemote = false;
+        }
+        updateSyncBadge();
+      })
+      .catch(function () { SYNC.online = false; updateSyncBadge(); });
+  }
+
+  function initSync() {
+    fetch("api/health", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("no server"); return fetch("api/state", { cache: "no-store" }); })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        SYNC.enabled = true; SYNC.online = true;
+        if (d.state && Array.isArray(d.state.trips)) {
+          applyingRemote = true;
+          state = normalizeState(d.state);
+          SYNC.rev = d.rev;
+          render();
+          applyingRemote = false;
+        } else {
+          pushToServer(); // server empty — seed it from whatever we have locally
+        }
+        updateSyncBadge();
+        setInterval(pollServer, 20000);
+        window.addEventListener("focus", pollServer);
+      })
+      .catch(function () { SYNC.enabled = false; updateSyncBadge(); });
+  }
+
+  function updateSyncBadge() {
+    var el = document.getElementById("syncBadge");
+    if (!el) return;
+    var cls = "sync-badge", txt;
+    if (!SYNC.enabled) { txt = "Local only"; cls += " local"; }
+    else if (!SYNC.online) { txt = "Offline — will sync"; cls += " offline"; }
+    else if (SYNC.saving || SYNC.pending) { txt = "Saving…"; cls += " saving"; }
+    else { txt = "✓ Synced"; cls += " synced"; }
+    el.className = cls;
+    el.textContent = txt;
+    el.title = SYNC.enabled
+      ? "Shared across your devices via this server — one source of truth."
+      : "Stored only in this browser. Open your Tailscale server URL for shared data across devices.";
   }
 
   function toast(msg) {
@@ -2085,6 +2197,7 @@
   render();
   setView("calendar");
   loadWorkshops();
+  initSync();
 })();
 </script>
 </body>

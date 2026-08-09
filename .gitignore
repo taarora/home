@@ -8,3 +8,7 @@ expedition-planner/Data/*.pdf
 
 # Local preview server log (from expedition-planner/r.sh)
 expedition-planner/preview.log
+
+# Python bytecode cache (from server.py)
+__pycache__/
+*.pyc

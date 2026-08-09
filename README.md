@@ -77,16 +77,42 @@ operator schedules into planned trips without retyping anything.
 
 ## Data & sync
 
-Because trips are stored in the browser's `localStorage`, each device keeps its
-own independent copy — there is no shared backend. To move data between devices
-(desktop ↔ iPad, or to share with another person):
+There are two ways to run the planner:
 
-1. **Export JSON** on the device with the latest data.
-2. Save it to a shared/synced location (e.g. an iCloud Drive folder).
-3. **Import JSON** on the other device.
+### A) Standalone (GitHub Pages) — per-device localStorage
 
-This is a manual, "last export wins" workflow. On iPad/iOS Safari, Import/Export
-is the only sync mechanism (mobile browsers can't auto-read a file on disk).
+Opened from `https://taarora.github.io/...`, trips live in that browser's
+`localStorage` — each device keeps its own copy (badge shows **"Local only"**).
+To move data between devices: **Export JSON** on one, **Import JSON** on the other
+(via an iCloud folder). Manual, "last export wins."
+
+### B) Sync server (Tailscale) — one source of truth ✅ recommended
+
+Run `server.py` on an always-on Mac (the Mac Studio). It serves the app **and**
+stores all trips in one `trips.json`; every device that opens the server URL reads
+and writes that same file live (badge shows **"✓ Synced"**). No localStorage
+dependence, no export/import shuffle — laptop, iPad, and a partner's device all
+see the same calendar.
+
+```bash
+expedition-planner/r.sh                      # start/restart the server on the Mac
+expedition-planner/scripts/setup-tailscale.sh   # once: publish it privately over HTTPS
+```
+
+`setup-tailscale.sh` runs `tailscale serve` on a dedicated HTTPS port (**8443**, so
+it doesn't disturb anything already on 443) and prints a private
+`https://<machine>.ts.net:8443` URL reachable **only** from devices on your
+tailnet — nothing is exposed to the public internet, no router ports opened, and
+the data never leaves your Mac. The one requirement: the host Mac must be awake.
+
+The app auto-detects which mode it's in (it looks for the server's `/api`); on
+GitHub Pages it silently falls back to localStorage. `localStorage` still acts as
+an offline cache in server mode, so brief disconnects don't lose edits.
+
+**First-time migration:** the server starts from `expedition-planner-data/trips.json`
+(currently seed data). To load your real trips, Export JSON from wherever they live
+now, then open the server URL and **Data ▸ Import JSON** — that write becomes the
+shared source of truth.
 
 ## Workshops data
 

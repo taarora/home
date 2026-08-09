@@ -14,13 +14,39 @@ an IIFE-wrapped `<script>` all inline. This is intentional and load-bearing:
 - **No external network requests at runtime** — no CDN scripts, web fonts, or
   remote assets. It must work fully offline and as a static file. Keep it that way
   (font stacks use system fonts only).
-  - **One sanctioned exception:** the app `fetch()`es its **own** `workshops.json`
-    from the same origin at startup (Workshops view). This is a same-origin data
-    file, not an external call, and it degrades gracefully if the fetch fails (see
-    Workshops below). Do not extend this to any third-party host.
-- If you add a feature, add it inline in this same file. Do not split it into
-  modules unless the human explicitly asks to change this architecture. The lone
-  companion file is `workshops.json` (reference data, not code).
+  - **Same-origin only:** the app `fetch()`es its own `workshops.json`, and (in
+    server mode) its own `/api/*`. These are same-origin, not external calls, and
+    all degrade gracefully if the fetch fails. Do not extend this to any
+    third-party host.
+- Keep the UI in this one file. Companion files are `workshops.json` (reference
+  data) and, for the optional sync server, `server.py` + `r.sh` +
+  `scripts/setup-tailscale.sh`. The server is **stdlib-only** (no pip deps) — keep
+  it that way.
+
+## Two run modes (localStorage vs sync server)
+
+The app runs in one of two modes, auto-detected at startup by `initSync()`:
+
+- **Standalone** (GitHub Pages, or any host without the API): `SYNC.enabled` stays
+  false; `localStorage` (`expeditionPlanner.v1`) is the source of truth. This is the
+  original behavior and the fallback.
+- **Sync server** (served by `server.py`, typically over Tailscale): `initSync()`
+  finds `/api/health`, flips `SYNC.enabled` on, and the server's **`trips.json`
+  becomes the source of truth**. `localStorage` is then only an offline cache.
+
+Server-mode contract (all same-origin, relative paths — never hardcode a host):
+- `GET /api/state` → `{rev, state}` where `rev` is the data file's mtime-ns.
+- `PUT /api/state` → `{state}`; returns the new `rev`.
+- `persist()` writes localStorage always, and in server mode also debounces a
+  `PUT` (`scheduleServerSave`/`pushToServer`). `pollServer()` (every 20s + on
+  window focus) adopts a newer `rev` only when there are no unsaved local edits and
+  the user isn't mid-interaction (`modalBackdrop.hidden && !dragId`). The
+  `applyingRemote` flag suppresses the re-save loop when adopting remote state.
+  Conflict resolution is last-write-wins; the `syncBadge` shows the state.
+- `server.py` binds `127.0.0.1`; `tailscale serve --https=8443` (NOT 443 — 443 is
+  the trading app) exposes it tailnet-only. Data file:
+  `~/Documents/Claude/Code/expedition-planner-data/trips.json` (also an
+  import-compatible backup), written atomically.
 
 ## Data model
 
