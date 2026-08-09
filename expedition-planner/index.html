@@ -509,6 +509,120 @@
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0);
   }
 
+  /* ---------- View toggle ---------- */
+  .view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--paper-raised);
+  }
+  .view-toggle button {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .view-toggle button.active { background: var(--accent); color: var(--accent-contrast); }
+  .view-toggle button:not(.active):hover { background: var(--accent-soft); color: var(--accent); }
+
+  /* ---------- Dropdown (Data menu, add-status menu) ---------- */
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 4px;
+    min-width: 168px;
+    z-index: 40;
+  }
+  .dropdown-menu[hidden] { display: none; }
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 13px;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dropdown-item:hover { background: var(--accent-soft); color: var(--accent); }
+  .dropdown-sep { height: 1px; background: var(--rule); margin: 4px 2px; }
+
+  /* ---------- Workshops view ---------- */
+  #workshopsView[hidden], #calendarView[hidden] { display: none; }
+  .wk-intro {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 14px; font-size: 12.5px; color: var(--ink-soft);
+  }
+  .wk-intro .wk-count { color: var(--ink); font-weight: 600; }
+  .wk-filters {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    background: var(--paper-raised); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;
+  }
+  .wk-filter { display: flex; flex-direction: column; gap: 4px; }
+  .wk-filter label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .wk-filter select {
+    font-size: 13px; padding: 6px 8px; border: 1px solid var(--rule-strong);
+    border-radius: 6px; background: var(--paper); color: var(--ink); min-width: 120px;
+  }
+  .wk-filter-reset { margin-left: auto; }
+
+  .chip.workshop { cursor: default; border-left-color: var(--ink-faint); }
+  .chip.workshop .chip-title::before { content: "◇ "; color: var(--ink-faint); }
+  .chip.workshop.is-added { opacity: 0.55; }
+  .chip-provider { display: block; font-size: 10px; color: var(--ink-faint); font-style: italic; }
+
+  .wk-list { display: flex; flex-direction: column; gap: 18px; }
+  .wk-month-group h3 {
+    font-family: var(--font-display); font-size: 16px; margin: 0 0 8px;
+    padding-bottom: 4px; border-bottom: 1px solid var(--rule);
+  }
+  .wk-row {
+    display: flex; gap: 12px; align-items: flex-start; justify-content: space-between;
+    padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px;
+    background: var(--paper-raised); margin-bottom: 8px;
+  }
+  .wk-row.is-added { opacity: 0.6; }
+  .wk-row-main { min-width: 0; flex: 1; }
+  .wk-row-name { font-weight: 600; font-size: 14px; }
+  .wk-row-name a { color: var(--ink); text-decoration: none; }
+  .wk-row-name a:hover { color: var(--accent); text-decoration: underline; }
+  .wk-row-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .wk-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .wk-tag {
+    font-size: 10.5px; padding: 1px 7px; border-radius: 12px;
+    background: var(--paper-sunken); color: var(--ink-soft);
+  }
+  .wk-tag.region { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .wk-row-actions { flex: 0 0 auto; text-align: right; }
+  .wk-price { font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 6px; white-space: nowrap; }
+  .wk-added-badge { font-size: 12px; color: var(--status-confirmed); font-weight: 600; }
+  .wk-empty { color: var(--ink-faint); font-style: italic; padding: 20px 4px; }
+
+  /* Source line in trip modal */
+  .source-line {
+    font-size: 12px; color: var(--ink-soft);
+    background: var(--paper-sunken); border-radius: 6px; padding: 8px 10px;
+  }
+  .source-line a { color: var(--accent); }
+  .source-line .from-workshop-tag { color: var(--ink-faint); }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
@@ -529,38 +643,91 @@
       <p id="summaryLine">Loading&hellip;</p>
     </div>
     <div class="masthead-actions">
-      <div class="year-nav">
+      <div class="view-toggle" role="tablist" aria-label="Switch view">
+        <button id="viewCalendarBtn" class="active" role="tab" aria-selected="true">Calendar</button>
+        <button id="viewWorkshopsBtn" role="tab" aria-selected="false">Workshops</button>
+      </div>
+      <div class="year-nav" id="yearNav">
         <button id="prevYear" aria-label="Show earlier years">‹</button>
         <select class="range" id="yearRange" aria-label="Jump to a year range"></select>
         <button id="nextYear" aria-label="Show later years">›</button>
       </div>
       <button class="btn" id="todayBtn">Today</button>
       <button class="btn btn-primary" id="newTripBtn">+ New Trip</button>
-      <button class="btn btn-ghost" id="exportBtn">Export JSON</button>
-      <button class="btn btn-ghost" id="importBtn">Import JSON</button>
+      <div class="dropdown" id="dataDropdown">
+        <button class="btn btn-ghost" id="dataMenuBtn" aria-haspopup="true" aria-expanded="false">Data ▾</button>
+        <div class="dropdown-menu" id="dataMenu" hidden role="menu">
+          <button class="dropdown-item" id="exportBtn" role="menuitem">Export JSON</button>
+          <button class="dropdown-item" id="importBtn" role="menuitem">Import JSON&hellip;</button>
+          <div class="dropdown-sep"></div>
+          <button class="dropdown-item" id="exportCsvBtn" role="menuitem">Export CSV</button>
+          <button class="dropdown-item" id="importCsvBtn" role="menuitem">Import CSV&hellip;</button>
+          <div class="dropdown-sep"></div>
+          <button class="dropdown-item" id="importWorkshopsBtn" role="menuitem">Import workshops&hellip;</button>
+        </div>
+      </div>
       <input type="file" id="importFile" accept="application/json" class="visually-hidden" />
-      <button class="btn btn-ghost" id="exportCsvBtn">Export CSV</button>
-      <button class="btn btn-ghost" id="importCsvBtn">Import CSV</button>
       <input type="file" id="importCsvFile" accept=".csv,text/csv" class="visually-hidden" />
+      <input type="file" id="importWorkshopsFile" accept="application/json" class="visually-hidden" />
     </div>
   </header>
 
-  <div class="subbar">
-    <div class="legend">
-      <span><span class="dot" style="background:var(--status-idea)"></span>Idea</span>
-      <span><span class="dot" style="background:var(--status-planned)"></span>Planned</span>
-      <span><span class="dot" style="background:var(--status-confirmed)"></span>Confirmed</span>
+  <div id="calendarView">
+    <div class="subbar">
+      <div class="legend">
+        <span><span class="dot" style="background:var(--status-idea)"></span>Idea</span>
+        <span><span class="dot" style="background:var(--status-planned)"></span>Planned</span>
+        <span><span class="dot" style="background:var(--status-confirmed)"></span>Confirmed</span>
+        <span title="Trips added from the Workshops tab are marked with a diamond">◇ from workshop</span>
+      </div>
+      <span>Drag a trip onto any month to reschedule it, or into the tray to unschedule it.</span>
     </div>
-    <span>Drag a trip onto any month to reschedule it, or into the tray to unschedule it.</span>
+
+    <div class="tray" id="tray">
+      <div class="tray-head"><span>Unscheduled ideas</span><span class="count" id="trayCount">0</span></div>
+      <div class="tray-row" id="trayRow" data-year="" data-month=""></div>
+    </div>
+
+    <div class="cal-scroll">
+      <div class="cal" id="cal"></div>
+    </div>
   </div>
 
-  <div class="tray" id="tray">
-    <div class="tray-head"><span>Unscheduled ideas</span><span class="count" id="trayCount">0</span></div>
-    <div class="tray-row" id="trayRow" data-year="" data-month=""></div>
-  </div>
-
-  <div class="cal-scroll">
-    <div class="cal" id="cal"></div>
+  <div id="workshopsView" hidden>
+    <div class="wk-intro">
+      <span>Browse photography workshops, filter them, then add the ones you like to your calendar as Idea, Planned, or Confirmed trips. <span class="wk-count" id="wkCount"></span></span>
+      <span id="wkGeneratedNote"></span>
+    </div>
+    <div class="wk-filters" id="wkFilters">
+      <div class="wk-filter">
+        <label for="wkRegion">Region</label>
+        <select id="wkRegion"><option value="all">All</option><option value="US">US</option><option value="International">International</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="wkType">Trip type</label>
+        <select id="wkType"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="wkSpecies">Species</label>
+        <select id="wkSpecies"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="wkYear">Year</label>
+        <select id="wkYear"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="wkMonth">Month</label>
+        <select id="wkMonth"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter wk-filter-reset">
+        <label>&nbsp;</label>
+        <button class="btn btn-ghost" id="wkResetBtn">Reset filters</button>
+      </div>
+    </div>
+    <div class="cal-scroll">
+      <div class="cal" id="wkCal"></div>
+    </div>
+    <div class="wk-list" id="wkList"></div>
   </div>
 </div>
 
@@ -625,7 +792,8 @@
       operators: [],
       photos: [],
       refLinks: [],
-      notes: ""
+      notes: "",
+      origin: "manual"
     };
   }
 
@@ -703,20 +871,31 @@
     ];
   }
 
+  function normalizeState(s) {
+    // Ensure every trip has an origin (older saves and seed trips default to manual)
+    (s.trips || []).forEach(function (t) { if (!t.origin) t.origin = "manual"; });
+    return s;
+  }
+
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.trips)) return parsed;
+        if (parsed && Array.isArray(parsed.trips)) return normalizeState(parsed);
       }
     } catch (e) { /* fall through to seed */ }
-    return { startYear: new Date().getFullYear(), trips: seedData() };
+    return normalizeState({ startYear: new Date().getFullYear(), trips: seedData() });
   }
 
   var state = loadState();
   var draft = null;
   var dragId = null;
+
+  // Workshops (reference data, not persisted to localStorage)
+  var workshopsData = { generatedAt: "", workshops: [] };
+  var currentView = "calendar"; // "calendar" | "workshops"
+  var wkFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
 
   function persist() {
     try {
@@ -741,7 +920,228 @@
     renderSummary();
     renderTray();
     renderCalendar();
+    if (currentView === "workshops") renderWorkshops();
     persist();
+  }
+
+  function setView(view) {
+    currentView = view;
+    var isCal = view === "calendar";
+    document.getElementById("calendarView").hidden = !isCal;
+    document.getElementById("workshopsView").hidden = isCal;
+    // Year navigation and "New Trip" only make sense on the calendar
+    document.getElementById("yearNav").style.display = isCal ? "" : "none";
+    document.getElementById("todayBtn").style.display = isCal ? "" : "none";
+    document.getElementById("newTripBtn").style.display = isCal ? "" : "none";
+    document.getElementById("viewCalendarBtn").classList.toggle("active", isCal);
+    document.getElementById("viewWorkshopsBtn").classList.toggle("active", !isCal);
+    document.getElementById("viewCalendarBtn").setAttribute("aria-selected", isCal);
+    document.getElementById("viewWorkshopsBtn").setAttribute("aria-selected", !isCal);
+    if (!isCal) renderWorkshops();
+  }
+
+  // ---------- Workshops data + view ----------
+
+  function loadWorkshops() {
+    fetch("workshops.json", { cache: "no-cache" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (data) { applyWorkshopsData(data); })
+      .catch(function () {
+        workshopsData = { generatedAt: "", workshops: [] };
+        var note = document.getElementById("wkGeneratedNote");
+        if (note) note.textContent = "Couldn't load workshops.json — use Data ▸ Import workshops.";
+        if (currentView === "workshops") renderWorkshops();
+      });
+  }
+
+  function applyWorkshopsData(data) {
+    workshopsData = {
+      generatedAt: (data && data.generatedAt) || "",
+      workshops: (data && Array.isArray(data.workshops)) ? data.workshops : []
+    };
+    populateWkFilters();
+    if (currentView === "workshops") renderWorkshops();
+  }
+
+  function populateWkFilters() {
+    var ws = workshopsData.workshops;
+    var typeSet = {}, speciesSet = {}, yearSet = {};
+    ws.forEach(function (w) {
+      (w.types || []).forEach(function (t) { typeSet[t] = true; });
+      (w.species || []).forEach(function (s) { speciesSet[s] = true; });
+      if (w.year) yearSet[w.year] = true;
+    });
+    function opt(v, label, sel) { return '<option value="' + escapeHtml(v) + '"' + (String(sel) === String(v) ? " selected" : "") + ">" + escapeHtml(label) + "</option>"; }
+    var types = Object.keys(typeSet).sort();
+    var species = Object.keys(speciesSet).sort();
+    var years = Object.keys(yearSet).map(Number).sort(function (a, b) { return a - b; });
+
+    document.getElementById("wkRegion").innerHTML =
+      opt("all", "All", wkFilters.region) + opt("US", "US", wkFilters.region) + opt("International", "International", wkFilters.region);
+    document.getElementById("wkType").innerHTML =
+      opt("all", "All", wkFilters.type) + types.map(function (t) { return opt(t, t, wkFilters.type); }).join("");
+    document.getElementById("wkSpecies").innerHTML =
+      opt("all", "All", wkFilters.species) + species.map(function (s) { return opt(s, s, wkFilters.species); }).join("");
+    document.getElementById("wkYear").innerHTML =
+      opt("all", "All", wkFilters.year) + years.map(function (y) { return opt(y, y, wkFilters.year); }).join("");
+    var monthOpts = opt("all", "All", wkFilters.month);
+    for (var m = 1; m <= 12; m++) monthOpts += opt(m, MONTHS[m - 1], wkFilters.month);
+    document.getElementById("wkMonth").innerHTML = monthOpts;
+  }
+
+  function applyWorkshopFilters() {
+    return workshopsData.workshops.filter(function (w) {
+      if (wkFilters.region !== "all" && w.region !== wkFilters.region) return false;
+      if (wkFilters.type !== "all" && (w.types || []).indexOf(wkFilters.type) < 0) return false;
+      if (wkFilters.species !== "all" && (w.species || []).indexOf(wkFilters.species) < 0) return false;
+      if (wkFilters.year !== "all" && String(w.year) !== String(wkFilters.year)) return false;
+      if (wkFilters.month !== "all" && String(w.month) !== String(wkFilters.month)) return false;
+      return true;
+    });
+  }
+
+  function addedWorkshopIds() {
+    var s = {};
+    state.trips.forEach(function (t) { if (t.workshopId) s[t.workshopId] = true; });
+    return s;
+  }
+
+  function wkFmt(iso) { var p = iso.split("-"); return { y: +p[0], m: +p[1], d: +p[2] }; }
+  function wkHumanRange(w) {
+    if (!w.startDate) return w.availability || "Dates by request";
+    var a = wkFmt(w.startDate);
+    if (!w.endDate) return a.d + " " + MONTHS[a.m - 1] + " " + a.y;
+    var b = wkFmt(w.endDate);
+    if (a.m === b.m && a.y === b.y) return a.d + "–" + b.d + " " + MONTHS[a.m - 1] + " " + a.y;
+    if (a.y === b.y) return a.d + " " + MONTHS[a.m - 1] + " – " + b.d + " " + MONTHS[b.m - 1] + " " + a.y;
+    return a.d + " " + MONTHS[a.m - 1] + " " + a.y + " – " + b.d + " " + MONTHS[b.m - 1] + " " + b.y;
+  }
+
+  function wkChipHtml(w, isAdded) {
+    return '<div class="chip workshop' + (isAdded ? " is-added" : "") + '" data-wk-add="' + w.id + '" tabindex="0" role="button" ' +
+      'title="' + escapeHtml(w.name + " — " + w.provider + (isAdded ? " (already added)" : ". Click to add.")) + '">' +
+      '<span class="chip-title">' + escapeHtml(w.name) + "</span>" +
+      '<span class="chip-provider">' + escapeHtml(w.provider) + "</span>" +
+      "</div>";
+  }
+
+  function wkRowHtml(w, isAdded) {
+    var tags = '<span class="wk-tag region">' + escapeHtml(w.region) + "</span>" +
+      (w.types || []).map(function (t) { return '<span class="wk-tag">' + escapeHtml(t) + "</span>"; }).join("") +
+      (w.species || []).map(function (s) { return '<span class="wk-tag">' + escapeHtml(s) + "</span>"; }).join("");
+    var sub = wkHumanRange(w) + (w.location || w.country ? " · " + escapeHtml(w.location || w.country) : "");
+    var nameHtml = w.providerUrl
+      ? '<a href="' + escapeHtml(w.providerUrl) + '" target="_blank" rel="noopener">' + escapeHtml(w.name) + "</a>"
+      : escapeHtml(w.name);
+    return '<div class="wk-row' + (isAdded ? " is-added" : "") + '">' +
+      '<div class="wk-row-main">' +
+        '<div class="wk-row-name">' + nameHtml + "</div>" +
+        '<div class="wk-row-sub">' + sub + " · " + escapeHtml(w.provider) + "</div>" +
+        '<div class="wk-tags">' + tags + "</div>" +
+      "</div>" +
+      '<div class="wk-row-actions">' +
+        (w.price ? '<div class="wk-price">' + escapeHtml(w.price) + "</div>" : "") +
+        (isAdded
+          ? '<span class="wk-added-badge">✓ Added</span>'
+          : '<button class="btn btn-primary wk-add-btn" data-wk-add="' + w.id + '">Add &#9662;</button>') +
+      "</div>" +
+    "</div>";
+  }
+
+  function renderWorkshops() {
+    var filtered = applyWorkshopFilters();
+    var added = addedWorkshopIds();
+    document.getElementById("wkCount").textContent = filtered.length + " of " + workshopsData.workshops.length + " shown";
+    if (workshopsData.generatedAt) {
+      document.getElementById("wkGeneratedNote").textContent = "Snapshot: " + workshopsData.generatedAt + " · prices/dates change — confirm with the operator";
+    }
+
+    var datedAll = workshopsData.workshops.filter(function (w) { return w.year; });
+    var yearSet = {};
+    datedAll.forEach(function (w) { yearSet[w.year] = true; });
+    var years = Object.keys(yearSet).map(Number).sort(function (a, b) { return a - b; });
+    if (!years.length) years = [new Date().getFullYear()];
+    var datedFiltered = filtered.filter(function (w) { return w.year; });
+
+    document.getElementById("wkCal").innerHTML = gridHtml(
+      years,
+      function (y) { var c = datedFiltered.filter(function (w) { return w.year === y; }).length; return c + " shown"; },
+      function (y, m) {
+        var here = datedFiltered.filter(function (w) { return w.year === y && w.month === m; });
+        return '<div class="cell-chips">' + here.map(function (w) { return wkChipHtml(w, added[w.id]); }).join("") + "</div>";
+      }
+    );
+
+    var listEl = document.getElementById("wkList");
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="wk-empty">No workshops match these filters.</div>';
+      return;
+    }
+    var groups = {}, undated = [];
+    filtered.forEach(function (w) {
+      if (w.year && w.month) { var k = w.year * 100 + w.month; (groups[k] = groups[k] || []).push(w); }
+      else undated.push(w);
+    });
+    var keys = Object.keys(groups).map(Number).sort(function (a, b) { return a - b; });
+    var html = "";
+    keys.forEach(function (k) {
+      var y = Math.floor(k / 100), m = k % 100;
+      html += '<div class="wk-month-group"><h3>' + MONTHS[m - 1] + " " + y + "</h3>" +
+        groups[k].map(function (w) { return wkRowHtml(w, added[w.id]); }).join("") + "</div>";
+    });
+    if (undated.length) {
+      html += '<div class="wk-month-group"><h3>Dates by request</h3>' +
+        undated.map(function (w) { return wkRowHtml(w, added[w.id]); }).join("") + "</div>";
+    }
+    listEl.innerHTML = html;
+  }
+
+  function wkParsePriceAmount(price) {
+    if (!price) return "";
+    var m = String(price).replace(/,/g, "").match(/(\d{3,})/);
+    return m ? m[1] : "";
+  }
+  function wkCurrency(price) {
+    if (!price) return "USD";
+    if (price.indexOf("€") >= 0 || /EUR/i.test(price)) return "EUR";
+    if (price.indexOf("£") >= 0 || /GBP/i.test(price)) return "GBP";
+    return "USD";
+  }
+
+  function mapWorkshopToTrip(w, status) {
+    var trip = blankTrip(w.year || null, w.month || null);
+    trip.title = w.name;
+    trip.status = status;
+    trip.dates = wkHumanRange(w);
+    trip.locations = w.location || w.country || "";
+    trip.species = (w.species || []).slice();
+    trip.budget = { amount: wkParsePriceAmount(w.price), currency: wkCurrency(w.price), notes: w.price || "" };
+    trip.operators = [{ name: w.provider, url: w.providerUrl || "", contact: "" }];
+    trip.refLinks = w.providerUrl ? [{ label: w.provider + " listing", url: w.providerUrl }] : [];
+    var noteBits = [];
+    if (w.types && w.types.length) noteBits.push("Type: " + w.types.join(", "));
+    if (w.availability) noteBits.push("Availability: " + w.availability);
+    if (w.notes) noteBits.push(w.notes);
+    noteBits.push("Added from workshop list" + (workshopsData.generatedAt ? " (snapshot " + workshopsData.generatedAt + ")" : ""));
+    trip.notes = noteBits.join("\n");
+    trip.origin = "workshop";
+    trip.sourceProvider = w.provider;
+    trip.sourceUrl = w.providerUrl || "";
+    trip.workshopId = w.id;
+    return trip;
+  }
+
+  function addWorkshopToCalendar(workshopId, status) {
+    var w = workshopsData.workshops.find(function (x) { return x.id === workshopId; });
+    if (!w) return;
+    if (state.trips.some(function (t) { return t.workshopId === workshopId; })) {
+      toast("“" + w.name + "” is already on your calendar.");
+      return;
+    }
+    state.trips.push(mapWorkshopToTrip(w, status));
+    var where = (w.year && w.month) ? (MONTHS[w.month - 1] + " " + w.year) : "the unscheduled tray";
+    toast("Added “" + w.name + "” as " + status + " to " + where + ".");
+    render();
   }
 
   function renderYearRange() {
@@ -782,10 +1182,14 @@
   function chipHtml(trip) {
     var statusVar = "var(--status-" + trip.status + ")";
     var loc = (trip.locations || "").split("\n")[0] || "";
+    var fromWorkshop = trip.origin === "workshop";
+    var marker = fromWorkshop ? "◇ " : "";
+    var wsTitle = fromWorkshop ? " — from workshop" + (trip.sourceProvider ? " (" + trip.sourceProvider + ")" : "") : "";
     return '<div class="chip" draggable="true" tabindex="0" role="button" ' +
-      'aria-label="' + escapeHtml(trip.title || "Untitled trip") + '" data-id="' + trip.id + '" ' +
+      'aria-label="' + escapeHtml(trip.title || "Untitled trip") + wsTitle + '" data-id="' + trip.id + '" ' +
+      'title="' + escapeHtml((trip.title || "Untitled trip") + wsTitle) + '" ' +
       'style="--status-color:' + statusVar + '">' +
-      '<span class="chip-title">' + escapeHtml(trip.title || "Untitled trip") + "</span>" +
+      '<span class="chip-title">' + marker + escapeHtml(trip.title || "Untitled trip") + "</span>" +
       (loc ? '<span class="chip-loc">' + escapeHtml(loc) + "</span>" : "") +
       "</div>";
   }
@@ -799,29 +1203,39 @@
       : '<div class="tray-empty">No unscheduled ideas — drag a trip here to take it off the calendar, or add a new one.</div>';
   }
 
-  function renderCalendar() {
-    var cal = document.getElementById("cal");
-    var years = [state.startYear, state.startYear + 1, state.startYear + 2];
+  // Shared month x year grid skeleton, used by the master calendar and the workshops view.
+  // headCountFn(year) -> string for the year header badge; cellFn(year, month) -> inner cell HTML.
+  function gridHtml(years, headCountFn, cellFn) {
     var today = new Date();
     var html = '<div class="cal-corner"></div>';
-
     years.forEach(function (y) {
-      var count = state.trips.filter(function (t) { return t.year === y; }).length;
-      html += '<div class="cal-yearhead">' + y + '<span class="trip-count">' + count + ' trip' + (count === 1 ? "" : "s") + '</span></div>';
+      html += '<div class="cal-yearhead">' + y + '<span class="trip-count">' + headCountFn(y) + '</span></div>';
     });
-
     for (var m = 1; m <= 12; m++) {
       html += '<div class="cal-monthlabel">' + MONTHS[m - 1] + "</div>";
       years.forEach(function (y) {
         var isToday = y === today.getFullYear() && m === today.getMonth() + 1;
-        var tripsHere = state.trips.filter(function (t) { return t.year === y && t.month === m; });
         html += '<div class="cell' + (isToday ? " is-today" : "") + '" data-year="' + y + '" data-month="' + m + '">' +
-          '<button class="cell-add" data-year="' + y + '" data-month="' + m + '" aria-label="Add trip in ' + MONTHS[m - 1] + " " + y + '">+</button>' +
-          '<div class="cell-chips">' + tripsHere.map(chipHtml).join("") + "</div>" +
-          "</div>";
+          cellFn(y, m) + "</div>";
       });
     }
-    cal.innerHTML = html;
+    return html;
+  }
+
+  function renderCalendar() {
+    var years = [state.startYear, state.startYear + 1, state.startYear + 2];
+    document.getElementById("cal").innerHTML = gridHtml(
+      years,
+      function (y) {
+        var count = state.trips.filter(function (t) { return t.year === y; }).length;
+        return count + " trip" + (count === 1 ? "" : "s");
+      },
+      function (y, m) {
+        var tripsHere = state.trips.filter(function (t) { return t.year === y && t.month === m; });
+        return '<button class="cell-add" data-year="' + y + '" data-month="' + m + '" aria-label="Add trip in ' + MONTHS[m - 1] + " " + y + '">+</button>' +
+          '<div class="cell-chips">' + tripsHere.map(chipHtml).join("") + "</div>";
+      }
+    );
   }
 
   // ---------- Drag and drop ----------
@@ -1209,9 +1623,24 @@
     }).join("");
   }
 
+  function fieldGroupSource(t) {
+    if (t.origin === "workshop") {
+      var link = t.sourceUrl
+        ? '<a href="' + escapeHtml(t.sourceUrl) + '" target="_blank" rel="noopener">' + escapeHtml(t.sourceProvider || "provider listing") + "</a>"
+        : escapeHtml(t.sourceProvider || "");
+      return '<section class="field-group"><div class="source-line">' +
+        '<span class="from-workshop-tag">◇</span> Source: added from the Workshops tab — ' + link + "</div></section>";
+    }
+    if (state.trips.some(function (x) { return x.id === t.id; })) {
+      return '<section class="field-group"><div class="source-line">Source: added manually</div></section>';
+    }
+    return "";
+  }
+
   function renderModalBody() {
     var body = document.getElementById("modalBody");
     body.innerHTML =
+      fieldGroupSource(draft) +
       fieldGroupOverview(draft) +
       fieldGroupLocSpecies(draft) +
       fieldGroupBudget(draft) +
@@ -1398,7 +1827,114 @@
     toast("Trip deleted.");
   });
 
+  // ---------- View toggle ----------
+
+  document.getElementById("viewCalendarBtn").addEventListener("click", function () { setView("calendar"); });
+  document.getElementById("viewWorkshopsBtn").addEventListener("click", function () { setView("workshops"); });
+
+  // ---------- Workshop filters ----------
+
+  function bindFilter(id, key) {
+    document.getElementById(id).addEventListener("change", function () {
+      wkFilters[key] = this.value;
+      renderWorkshops();
+    });
+  }
+  bindFilter("wkRegion", "region");
+  bindFilter("wkType", "type");
+  bindFilter("wkSpecies", "species");
+  bindFilter("wkYear", "year");
+  bindFilter("wkMonth", "month");
+  document.getElementById("wkResetBtn").addEventListener("click", function () {
+    wkFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
+    populateWkFilters();
+    renderWorkshops();
+  });
+
+  // ---------- Data dropdown ----------
+
+  var dataMenu = document.getElementById("dataMenu");
+  var dataMenuBtn = document.getElementById("dataMenuBtn");
+  function closeDataMenu() { dataMenu.hidden = true; dataMenuBtn.setAttribute("aria-expanded", "false"); }
+  dataMenuBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var willOpen = dataMenu.hidden;
+    dataMenu.hidden = !willOpen;
+    dataMenuBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+  dataMenu.addEventListener("click", function () { closeDataMenu(); });
+  document.addEventListener("click", function (e) {
+    if (!dataMenu.hidden && !e.target.closest("#dataDropdown")) closeDataMenu();
+  });
+
+  // ---------- Import workshops ----------
+
+  document.getElementById("importWorkshopsBtn").addEventListener("click", function () {
+    document.getElementById("importWorkshopsFile").click();
+  });
+  document.getElementById("importWorkshopsFile").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        if (!data || !Array.isArray(data.workshops)) throw new Error("bad shape");
+        applyWorkshopsData(data);
+        setView("workshops");
+        toast("Loaded " + data.workshops.length + " workshops.");
+      } catch (err) {
+        toast("Import failed — expected a workshops.json file with a \"workshops\" array.");
+      }
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  });
+
+  // ---------- Workshop "Add" status menu (floating) ----------
+
+  var wkAddMenu = document.createElement("div");
+  wkAddMenu.className = "dropdown-menu";
+  wkAddMenu.hidden = true;
+  wkAddMenu.style.position = "fixed";
+  wkAddMenu.innerHTML =
+    '<button class="dropdown-item" data-wk-status="idea">Add as Idea</button>' +
+    '<button class="dropdown-item" data-wk-status="planned">Add as Planned</button>' +
+    '<button class="dropdown-item" data-wk-status="confirmed">Add as Confirmed</button>';
+  document.body.appendChild(wkAddMenu);
+  var wkAddTargetId = null;
+  function closeWkAddMenu() { wkAddMenu.hidden = true; wkAddTargetId = null; }
+
+  document.addEventListener("click", function (e) {
+    var statusOpt = e.target.closest("[data-wk-status]");
+    if (statusOpt && !wkAddMenu.hidden) {
+      e.stopPropagation();
+      if (wkAddTargetId) addWorkshopToCalendar(wkAddTargetId, statusOpt.getAttribute("data-wk-status"));
+      closeWkAddMenu();
+      return;
+    }
+    var addEl = e.target.closest("[data-wk-add]");
+    if (addEl) {
+      e.preventDefault();
+      wkAddTargetId = addEl.getAttribute("data-wk-add");
+      var r = addEl.getBoundingClientRect();
+      wkAddMenu.hidden = false;
+      wkAddMenu.style.top = (r.bottom + 4) + "px";
+      wkAddMenu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 184)) + "px";
+      return;
+    }
+    if (!wkAddMenu.hidden) closeWkAddMenu();
+  });
+  window.addEventListener("resize", closeWkAddMenu);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeWkAddMenu(); closeDataMenu(); }
+  });
+
+  // ---------- Init ----------
+
   render();
+  setView("calendar");
+  loadWorkshops();
 })();
 </script>
 </body>

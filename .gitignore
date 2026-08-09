@@ -1,0 +1,7 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Large provider PDFs are local source material only — don't bloat the repo.
+# The workshop data extracted from them lives in expedition-planner/workshops.json.
+expedition-planner/Data/*.pdf

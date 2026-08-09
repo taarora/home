@@ -8,7 +8,11 @@ a multi-year horizon. Live at **<https://taarora.github.io/home/expedition-plann
 ## What it does
 
 Expedition Planner is a visual, drag-and-drop calendar for scheduling and
-researching wildlife/photography trips over a rolling three-year window.
+researching wildlife/photography trips over a rolling three-year window. It has
+two views, toggled in the header: a personal **Calendar** and a **Workshops**
+browser you can add trips from.
+
+### Calendar view
 
 - **Month × year grid** — three years shown side by side, one row per month.
   Navigate with prev/next arrows, a year-range jump dropdown, or the **Today**
@@ -24,11 +28,35 @@ researching wildlife/photography trips over a rolling three-year window.
   - Useful links, tour operators (with contact info), and reference links
   - Uploaded **inspiration photos** with a click-to-zoom lightbox
   - Free-form notes
-- **Excel-compatible CSV import/export** — round-trips cleanly, including
-  quoted/multi-line fields and UTF-8 characters (a UTF-8 BOM is written so Excel
-  opens it correctly).
-- **JSON backup/restore** — full-fidelity export and import of all trip data.
+- **Provenance marker** — trips added from the Workshops view are marked with a
+  ◇ diamond on their chip and a "Source" line in the detail modal, so you can
+  always tell them apart from trips you created by hand.
+- **Data menu** — Export/Import JSON, Export/Import CSV, and Import workshops are
+  grouped under a single **Data ▾** dropdown in the header.
+  - **Excel-compatible CSV import/export** — round-trips cleanly, including
+    quoted/multi-line fields and UTF-8 characters (a UTF-8 BOM is written so Excel
+    opens it correctly).
+  - **JSON backup/restore** — full-fidelity export and import of all trip data.
 - **Light and dark themes** — follows the OS setting.
+
+### Workshops view
+
+A browsable, filterable catalog of real photography workshops, so you can turn
+operator schedules into planned trips without retyping anything.
+
+- **Filter** by region (US / International), trip type, species, year, and month.
+- **Two ways to browse** — the same month × year grid (read-only workshop chips)
+  plus a filterable list grouped by month, with an entry for undated
+  ("dates by request") trips.
+- **Add to your calendar** — each workshop has an **Add** control that lets you
+  drop it onto the Calendar as an **Idea**, **Planned**, or **Confirmed** trip.
+  Dates, location, species, price (→ budget), and the operator (→ tour operator +
+  reference link) are carried over automatically. Undated workshops are added as
+  unscheduled ideas (they land in the tray). Already-added workshops show an
+  "Added" badge instead of the button.
+- **Data source** — the catalog is a pre-built snapshot in
+  [`expedition-planner/workshops.json`](expedition-planner/workshops.json),
+  loaded at startup. See *Workshops data* below.
 
 ## How it was built
 
@@ -55,6 +83,18 @@ own independent copy — there is no shared backend. To move data between device
 This is a manual, "last export wins" workflow. On iPad/iOS Safari, Import/Export
 is the only sync mechanism (mobile browsers can't auto-read a file on disk).
 
+## Workshops data
+
+The Workshops view reads `expedition-planner/workshops.json` — a **dated,
+best-effort snapshot** compiled from the operator sites listed in
+`expedition-planner/Data/Workshop Calendars.rtf`. It is not live: operators
+change prices and schedules constantly, so **always confirm details on the
+provider site before booking**. The file records the sites that were covered and
+the ones that were skipped (and why). To refresh it, re-extract from the provider
+pages and replace the file; if the app can't load it, use **Data ▸ Import
+workshops** to load one manually. Some entries (e.g. catalog-only providers) are
+undated and appear only in the list under "Dates by request."
+
 ## Running locally
 
 Open `expedition-planner/index.html` through a local web server (recommended over
@@ -70,5 +110,8 @@ python3 -m http.server 8743 --directory expedition-planner
 ```
 expedition-planner/
   index.html        # the entire app
+  workshops.json    # pre-built workshop catalog for the Workshops view
+  Data/             # source material (provider URL list); not served
 README.md
+CLAUDE.md           # working notes for AI agents on this repo
 ```
