@@ -1432,17 +1432,44 @@
 
   // ---------- Export / Import ----------
 
-  document.getElementById("exportBtn").addEventListener("click", function () {
-    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  // Save a blob. On browsers with the File System Access API (Chrome/Edge desktop)
+  // this opens a native Save dialog so the user can save straight into a folder of
+  // their choice (e.g. expedition-planner-data) — and it defaults back there next
+  // time. Elsewhere (Safari, iPad) it falls back to a normal download.
+  function saveFile(blob, filename, accept) {
+    if (window.showSaveFilePicker) {
+      var types = accept ? [{ description: "File", accept: accept }] : undefined;
+      window.showSaveFilePicker({ suggestedName: filename, types: types })
+        .then(function (handle) {
+          return handle.createWritable().then(function (w) {
+            return w.write(blob).then(function () { return w.close(); });
+          }).then(function () { toast("Saved " + handle.name + "."); });
+        })
+        .catch(function (err) {
+          if (err && err.name === "AbortError") return; // user cancelled
+          downloadBlob(blob, filename);
+          toast("Saved to Downloads (" + filename + ").");
+        });
+      return;
+    }
+    downloadBlob(blob, filename);
+    toast("Saved to Downloads (" + filename + ").");
+  }
+
+  function downloadBlob(blob, filename) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "expedition-planner-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast("Exported to JSON file.");
+  }
+
+  document.getElementById("exportBtn").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    saveFile(blob, "expedition-planner-" + new Date().toISOString().slice(0, 10) + ".json", { "application/json": [".json"] });
   });
 
   document.getElementById("importBtn").addEventListener("click", function () {
@@ -1521,15 +1548,7 @@
       ].join(","));
     });
     var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "expedition-planner-" + new Date().toISOString().slice(0, 10) + ".csv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    toast("Exported to CSV file.");
+    saveFile(blob, "expedition-planner-" + new Date().toISOString().slice(0, 10) + ".csv", { "text/csv": [".csv"] });
   }
 
   function parseCsv(text) {
