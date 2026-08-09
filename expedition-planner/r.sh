@@ -62,7 +62,10 @@ for i in $(seq 1 20); do
       fi
     fi
 
-    open -a "Google Chrome" "$URL" 2>/dev/null || open "$URL" 2>/dev/null
+    # Cache-buster so Chrome loads a FRESH page instead of re-focusing a stale tab.
+    # Same origin (only the query differs), so saved data / sync are unaffected.
+    FRESH="${URL}?t=$(date +%s)"
+    open -a "Google Chrome" "$FRESH" 2>/dev/null || open "$FRESH" 2>/dev/null
     exit 0
   fi
 done
