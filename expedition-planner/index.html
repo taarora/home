@@ -201,18 +201,18 @@
   .tray {
     background: var(--paper-raised);
     border: 1px solid var(--rule);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 22px;
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin-bottom: 14px;
   }
   .tray-head {
     display: flex; align-items: center; gap: 8px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-faint);
-    margin-bottom: 10px;
+    margin-bottom: 6px;
   }
   .tray-head .count {
     background: var(--paper-sunken);
@@ -241,6 +241,23 @@
     border-top: 1px solid var(--rule-strong);
     border-left: 1px solid var(--rule-strong);
   }
+  .cal.has-ideas {
+    grid-template-columns: 56px repeat(3, minmax(180px, 1fr)) minmax(170px, 0.9fr);
+    min-width: 820px;
+  }
+  .cal-ideas-head {
+    background: var(--accent-soft) !important;
+    color: var(--accent);
+  }
+  .cal-ideas-cell {
+    background: var(--paper-sunken);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+  }
+  .cal-ideas-cell.drag-over { background: var(--accent-soft); }
+  .cal-ideas-empty { color: var(--ink-faint); font-size: 11px; font-style: italic; padding: 6px 2px; }
   .cal-corner {
     border-bottom: 1px solid var(--rule-strong);
     border-right: 1px solid var(--rule-strong);
@@ -589,6 +606,7 @@
   .chip-provider { display: block; font-size: 10px; color: var(--ink-faint); font-style: italic; }
 
   .wk-list { display: flex; flex-direction: column; gap: 18px; }
+  .wk-list-note { font-size: 12px; color: var(--ink-faint); font-style: italic; margin: 0 0 10px; }
   .wk-month-group h3 {
     font-family: var(--font-display); font-size: 16px; margin: 0 0 8px;
     padding-bottom: 4px; border-bottom: 1px solid var(--rule);
@@ -680,12 +698,34 @@
         <span><span class="dot" style="background:var(--status-confirmed)"></span>Confirmed</span>
         <span title="Trips added from the Workshops tab are marked with a diamond">◇ from workshop</span>
       </div>
-      <span>Drag a trip onto any month to reschedule it, or into the tray to unschedule it.</span>
+      <span>Drag a trip between months to reschedule, or into the <strong>Ideas</strong> column (far right) to unschedule it.</span>
     </div>
 
-    <div class="tray" id="tray">
-      <div class="tray-head"><span>Unscheduled ideas</span><span class="count" id="trayCount">0</span></div>
-      <div class="tray-row" id="trayRow" data-year="" data-month=""></div>
+    <div class="wk-filters" id="calFilters">
+      <div class="wk-filter">
+        <label for="calRegion">Region</label>
+        <select id="calRegion"><option value="all">All</option><option value="US">Domestic (US)</option><option value="International">International</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="calType">Trip type</label>
+        <select id="calType"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="calSpecies">Species</label>
+        <select id="calSpecies"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="calYear">Year</label>
+        <select id="calYear"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter">
+        <label for="calMonth">Month</label>
+        <select id="calMonth"><option value="all">All</option></select>
+      </div>
+      <div class="wk-filter wk-filter-reset">
+        <label>&nbsp;</label>
+        <button class="btn btn-ghost" id="calResetBtn">Reset filters</button>
+      </div>
     </div>
 
     <div class="cal-scroll">
@@ -701,7 +741,7 @@
     <div class="wk-filters" id="wkFilters">
       <div class="wk-filter">
         <label for="wkRegion">Region</label>
-        <select id="wkRegion"><option value="all">All</option><option value="US">US</option><option value="International">International</option></select>
+        <select id="wkRegion"><option value="all">All</option><option value="US">Domestic (US)</option><option value="International">International</option></select>
       </div>
       <div class="wk-filter">
         <label for="wkType">Trip type</label>
@@ -793,7 +833,9 @@
       photos: [],
       refLinks: [],
       notes: "",
-      origin: "manual"
+      origin: "manual",
+      region: "",
+      types: []
     };
   }
 
@@ -872,9 +914,26 @@
   }
 
   function normalizeState(s) {
-    // Ensure every trip has an origin (older saves and seed trips default to manual)
-    (s.trips || []).forEach(function (t) { if (!t.origin) t.origin = "manual"; });
+    // Backfill additive fields on older saves and seed trips
+    (s.trips || []).forEach(function (t) {
+      if (!t.origin) t.origin = "manual";
+      if (typeof t.region !== "string") t.region = "";
+      if (!Array.isArray(t.types)) t.types = [];
+    });
     return s;
+  }
+
+  // US states / common domestic markers, used to infer region from a trip's
+  // locations text when a trip has no explicit region set.
+  var US_REGION_RE = /\b(USA|U\.?S\.?A?|United States|Alaska|Hawaii|Alabama|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b/i;
+
+  // Returns "US", "International", or "unknown" for a trip. Explicit region wins;
+  // otherwise inferred from the locations text.
+  function tripRegion(t) {
+    if (t.region === "US" || t.region === "International") return t.region;
+    var loc = (t.locations || "").trim();
+    if (!loc) return "unknown";
+    return US_REGION_RE.test(loc) ? "US" : "International";
   }
 
   function loadState() {
@@ -896,6 +955,7 @@
   var workshopsData = { generatedAt: "", workshops: [] };
   var currentView = "calendar"; // "calendar" | "workshops"
   var wkFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
+  var calFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
 
   function persist() {
     try {
@@ -918,7 +978,7 @@
   function render() {
     renderYearRange();
     renderSummary();
-    renderTray();
+    populateCalFilters();
     renderCalendar();
     if (currentView === "workshops") renderWorkshops();
     persist();
@@ -977,7 +1037,7 @@
     var years = Object.keys(yearSet).map(Number).sort(function (a, b) { return a - b; });
 
     document.getElementById("wkRegion").innerHTML =
-      opt("all", "All", wkFilters.region) + opt("US", "US", wkFilters.region) + opt("International", "International", wkFilters.region);
+      opt("all", "All", wkFilters.region) + opt("US", "Domestic (US)", wkFilters.region) + opt("International", "International", wkFilters.region);
     document.getElementById("wkType").innerHTML =
       opt("all", "All", wkFilters.type) + types.map(function (t) { return opt(t, t, wkFilters.type); }).join("");
     document.getElementById("wkSpecies").innerHTML =
@@ -1072,28 +1132,21 @@
       }
     );
 
+    // The grid above is the home for every dated workshop; the list below shows
+    // only the undated ("Dates by request") ones so nothing is duplicated.
+    var undated = filtered.filter(function (w) { return !(w.year && w.month); });
     var listEl = document.getElementById("wkList");
-    if (!filtered.length) {
-      listEl.innerHTML = '<div class="wk-empty">No workshops match these filters.</div>';
+    if (!undated.length) {
+      listEl.innerHTML = '<div class="wk-empty">' +
+        (datedFiltered.length
+          ? "All matching workshops have dates — see the calendar grid above (click a chip to add one)."
+          : "No workshops match these filters.") +
+        "</div>";
       return;
     }
-    var groups = {}, undated = [];
-    filtered.forEach(function (w) {
-      if (w.year && w.month) { var k = w.year * 100 + w.month; (groups[k] = groups[k] || []).push(w); }
-      else undated.push(w);
-    });
-    var keys = Object.keys(groups).map(Number).sort(function (a, b) { return a - b; });
-    var html = "";
-    keys.forEach(function (k) {
-      var y = Math.floor(k / 100), m = k % 100;
-      html += '<div class="wk-month-group"><h3>' + MONTHS[m - 1] + " " + y + "</h3>" +
-        groups[k].map(function (w) { return wkRowHtml(w, added[w.id]); }).join("") + "</div>";
-    });
-    if (undated.length) {
-      html += '<div class="wk-month-group"><h3>Dates by request</h3>' +
-        undated.map(function (w) { return wkRowHtml(w, added[w.id]); }).join("") + "</div>";
-    }
-    listEl.innerHTML = html;
+    listEl.innerHTML = '<div class="wk-month-group"><h3>Dates by request (' + undated.length + ")</h3>" +
+      '<p class="wk-list-note">These workshops have no fixed dates — adding one drops it into the Ideas column on your calendar.</p>' +
+      undated.map(function (w) { return wkRowHtml(w, added[w.id]); }).join("") + "</div>";
   }
 
   function wkParsePriceAmount(price) {
@@ -1115,6 +1168,8 @@
     trip.dates = wkHumanRange(w);
     trip.locations = w.location || w.country || "";
     trip.species = (w.species || []).slice();
+    trip.types = (w.types || []).slice();
+    trip.region = w.region || "";
     trip.budget = { amount: wkParsePriceAmount(w.price), currency: wkCurrency(w.price), notes: w.price || "" };
     trip.operators = [{ name: w.provider, url: w.providerUrl || "", contact: "" }];
     trip.refLinks = w.providerUrl ? [{ label: w.provider + " listing", url: w.providerUrl }] : [];
@@ -1139,7 +1194,7 @@
       return;
     }
     state.trips.push(mapWorkshopToTrip(w, status));
-    var where = (w.year && w.month) ? (MONTHS[w.month - 1] + " " + w.year) : "the unscheduled tray";
+    var where = (w.year && w.month) ? (MONTHS[w.month - 1] + " " + w.year) : "the Ideas column";
     toast("Added “" + w.name + "” as " + status + " to " + where + ".");
     render();
   }
@@ -1194,23 +1249,61 @@
       "</div>";
   }
 
-  function renderTray() {
-    var unscheduled = state.trips.filter(function (t) { return !t.year || !t.month; });
-    document.getElementById("trayCount").textContent = unscheduled.length;
-    var row = document.getElementById("trayRow");
-    row.innerHTML = unscheduled.length
-      ? unscheduled.map(chipHtml).join("")
-      : '<div class="tray-empty">No unscheduled ideas — drag a trip here to take it off the calendar, or add a new one.</div>';
+  // Calendar filter bar (mirrors the Workshops filters, over the user's own trips).
+  function calMatch(t) {
+    if (calFilters.region !== "all" && tripRegion(t) !== calFilters.region) return false;
+    if (calFilters.type !== "all" && (t.types || []).indexOf(calFilters.type) < 0) return false;
+    if (calFilters.species !== "all" && (t.species || []).indexOf(calFilters.species) < 0) return false;
+    if (calFilters.year !== "all" && String(t.year) !== String(calFilters.year)) return false;
+    if (calFilters.month !== "all" && String(t.month) !== String(calFilters.month)) return false;
+    return true;
+  }
+
+  function populateCalFilters() {
+    var typeSet = {}, speciesSet = {}, yearSet = {};
+    state.trips.forEach(function (t) {
+      (t.types || []).forEach(function (x) { typeSet[x] = true; });
+      (t.species || []).forEach(function (x) { speciesSet[x] = true; });
+      if (t.year) yearSet[t.year] = true;
+    });
+    function opt(v, label, sel) { return '<option value="' + escapeHtml(String(v)) + '"' + (String(sel) === String(v) ? " selected" : "") + ">" + escapeHtml(String(label)) + "</option>"; }
+    var types = Object.keys(typeSet).sort();
+    var species = Object.keys(speciesSet).sort();
+    var years = Object.keys(yearSet).map(Number).sort(function (a, b) { return a - b; });
+    document.getElementById("calRegion").innerHTML =
+      opt("all", "All", calFilters.region) + opt("US", "Domestic (US)", calFilters.region) + opt("International", "International", calFilters.region);
+    document.getElementById("calType").innerHTML =
+      opt("all", "All", calFilters.type) + types.map(function (t) { return opt(t, t, calFilters.type); }).join("");
+    document.getElementById("calSpecies").innerHTML =
+      opt("all", "All", calFilters.species) + species.map(function (s) { return opt(s, s, calFilters.species); }).join("");
+    document.getElementById("calYear").innerHTML =
+      opt("all", "All", calFilters.year) + years.map(function (y) { return opt(y, y, calFilters.year); }).join("");
+    var mo = opt("all", "All", calFilters.month);
+    for (var m = 1; m <= 12; m++) mo += opt(m, MONTHS[m - 1], calFilters.month);
+    document.getElementById("calMonth").innerHTML = mo;
+  }
+
+  function calFiltersActive() {
+    return calFilters.region !== "all" || calFilters.type !== "all" || calFilters.species !== "all" || calFilters.year !== "all" || calFilters.month !== "all";
   }
 
   // Shared month x year grid skeleton, used by the master calendar and the workshops view.
   // headCountFn(year) -> string for the year header badge; cellFn(year, month) -> inner cell HTML.
-  function gridHtml(years, headCountFn, cellFn) {
+  // ideas (optional) -> { count: string, html: string } adds a spanning "Ideas" column
+  // after the year columns (calendar only).
+  function gridHtml(years, headCountFn, cellFn, ideas) {
     var today = new Date();
     var html = '<div class="cal-corner"></div>';
     years.forEach(function (y) {
       html += '<div class="cal-yearhead">' + y + '<span class="trip-count">' + headCountFn(y) + '</span></div>';
     });
+    if (ideas) {
+      html += '<div class="cal-yearhead cal-ideas-head">Ideas<span class="trip-count">' + ideas.count + '</span></div>';
+      // Spanning cell placed explicitly so the month cells auto-flow into columns 1-4.
+      var ideasCol = years.length + 2; // 1 (month label) + N years + 1
+      html += '<div class="cell cal-ideas-cell" data-ideas="1" style="grid-column:' + ideasCol + ';grid-row:2 / span 12;">' +
+        ideas.html + "</div>";
+    }
     for (var m = 1; m <= 12; m++) {
       html += '<div class="cal-monthlabel">' + MONTHS[m - 1] + "</div>";
       years.forEach(function (y) {
@@ -1224,17 +1317,29 @@
 
   function renderCalendar() {
     var years = [state.startYear, state.startYear + 1, state.startYear + 2];
-    document.getElementById("cal").innerHTML = gridHtml(
+    var unscheduled = state.trips.filter(function (t) { return (!t.year || !t.month) && calMatch(t); });
+    var ideas = {
+      count: String(unscheduled.length),
+      html: unscheduled.length
+        ? unscheduled.map(chipHtml).join("")
+        : '<div class="cal-ideas-empty">' +
+            (calFiltersActive() ? "No ideas match the filters." : "Drag a trip here to unschedule it, or add one with + New Trip.") +
+          "</div>"
+    };
+    var cal = document.getElementById("cal");
+    cal.classList.add("has-ideas");
+    cal.innerHTML = gridHtml(
       years,
       function (y) {
-        var count = state.trips.filter(function (t) { return t.year === y; }).length;
+        var count = state.trips.filter(function (t) { return t.year === y && calMatch(t); }).length;
         return count + " trip" + (count === 1 ? "" : "s");
       },
       function (y, m) {
-        var tripsHere = state.trips.filter(function (t) { return t.year === y && t.month === m; });
+        var tripsHere = state.trips.filter(function (t) { return t.year === y && t.month === m && calMatch(t); });
         return '<button class="cell-add" data-year="' + y + '" data-month="' + m + '" aria-label="Add trip in ' + MONTHS[m - 1] + " " + y + '">+</button>' +
           '<div class="cell-chips">' + tripsHere.map(chipHtml).join("") + "</div>";
-      }
+      },
+      ideas
     );
   }
 
@@ -1255,7 +1360,7 @@
   });
 
   document.addEventListener("dragover", function (e) {
-    var dropzone = e.target.closest(".cell, #trayRow");
+    var dropzone = e.target.closest(".cell");
     if (!dropzone) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -1263,12 +1368,12 @@
   });
 
   document.addEventListener("dragleave", function (e) {
-    var dropzone = e.target.closest(".cell, #trayRow");
+    var dropzone = e.target.closest(".cell");
     if (dropzone) dropzone.classList.remove("drag-over");
   });
 
   document.addEventListener("drop", function (e) {
-    var dropzone = e.target.closest(".cell, #trayRow");
+    var dropzone = e.target.closest(".cell");
     if (!dropzone) return;
     e.preventDefault();
     dropzone.classList.remove("drag-over");
@@ -1526,6 +1631,12 @@
         '<input type="text" id="f-dates" value="' + escapeHtml(t.dates) + '" placeholder="e.g. 14–24 Mar" /></div>' +
         '<div class="field"><label for="f-group">Group size</label>' +
         '<input type="text" id="f-group" value="' + escapeHtml(t.groupSize) + '" placeholder="e.g. 6 photographers" /></div>' +
+        '<div class="field"><label for="f-region">Region</label>' +
+        '<select id="f-region">' +
+          '<option value=""' + (!t.region ? " selected" : "") + ">Unspecified</option>" +
+          '<option value="US"' + (t.region === "US" ? " selected" : "") + ">Domestic (US)</option>" +
+          '<option value="International"' + (t.region === "International" ? " selected" : "") + ">International</option>" +
+        "</select></div>" +
       "</div>" +
     "</section>";
   }
@@ -1798,6 +1909,7 @@
     draft.month = monthVal ? parseInt(monthVal, 10) : null;
     draft.dates = document.getElementById("f-dates").value.trim();
     draft.groupSize = document.getElementById("f-group").value.trim();
+    draft.region = document.getElementById("f-region").value;
     draft.locations = document.getElementById("f-locations").value;
     draft.budget = {
       amount: document.getElementById("f-budget-amount").value.trim(),
@@ -1849,6 +1961,25 @@
     wkFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
     populateWkFilters();
     renderWorkshops();
+  });
+
+  // ---------- Calendar filters ----------
+
+  function bindCalFilter(id, key) {
+    document.getElementById(id).addEventListener("change", function () {
+      calFilters[key] = this.value;
+      renderCalendar();
+    });
+  }
+  bindCalFilter("calRegion", "region");
+  bindCalFilter("calType", "type");
+  bindCalFilter("calSpecies", "species");
+  bindCalFilter("calYear", "year");
+  bindCalFilter("calMonth", "month");
+  document.getElementById("calResetBtn").addEventListener("click", function () {
+    calFilters = { region: "all", type: "all", species: "all", year: "all", month: "all" };
+    populateCalFilters();
+    renderCalendar();
   });
 
   // ---------- Data dropdown ----------

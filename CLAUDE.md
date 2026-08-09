@@ -36,7 +36,7 @@ change, and migrate on load). Shape:
       "id": "t_<base36ts>_<rand>",
       "title": "…",
       "status": "idea" | "planned" | "confirmed",
-      "year": 2026 | null,        // null + null month => lives in the tray
+      "year": 2026 | null,        // null + null month => lives in the Ideas column
       "month": 3 | null,          // 1-12
       "dates": "14–24 Mar",       // free text, human-readable
       "groupSize": "…",
@@ -49,6 +49,8 @@ change, and migrate on load). Shape:
       "photos":    [{ "dataUrl": "data:image/…;base64,…", "caption": "" }],
       "notes": "…",
       "origin": "manual" | "workshop",
+      "region": "" | "US" | "International",  // "" = unspecified; inferred at filter time
+      "types": ["…"],                          // trip types; empty for manual trips
       // present only when origin === "workshop":
       "sourceProvider": "…", "sourceUrl": "…", "workshopId": "w_…"
     }
@@ -57,7 +59,10 @@ change, and migrate on load). Shape:
 ```
 
 Notes:
-- A trip is **unscheduled** (shows in the tray) iff `year` or `month` is falsy.
+- A trip is **unscheduled** (shows in the **Ideas column** — the spanning cell on
+  the right of the grid) iff `year` or `month` is falsy. There is no separate tray
+  anymore; the Ideas column is a normal `.cell` drop target with no
+  `data-year`/`data-month`, so dropping a chip there unschedules it.
 - `photos` are stored inline as base64 **data URLs** in `localStorage`. This is
   the main storage-bloat risk — a `try/catch` around `persist()` surfaces a toast
   if the quota is blown. Be mindful before adding features that store more blobs.
@@ -69,6 +74,16 @@ Notes:
   Workshop-origin trips also carry `sourceProvider` / `sourceUrl` / `workshopId`
   and render a ◇ marker on the chip + a "Source" line in the modal
   (`fieldGroupSource`). `workshopId` is what powers the "already added" guard.
+- **`region` / `types`** power the Calendar filter bar, which mirrors the Workshops
+  filters (Region/type/species/year/month) over the user's own trips via
+  `calMatch` / `calFilters` / `populateCalFilters`. `region` is set from the
+  workshop on add, editable in the modal, and falls back to `tripRegion()` which
+  infers US vs International from the locations text (`US_REGION_RE`). Both are
+  backfilled by `normalizeState` — additive, no key bump. `types` is only
+  populated on workshop-added trips (manual trips have `[]`).
+- The month × year grid is built by `gridHtml(years, headCountFn, cellFn, ideas)`;
+  the optional `ideas` arg adds the spanning Ideas column and is passed only by the
+  calendar (the Workshops grid omits it).
 
 ## Status → color mapping
 
@@ -142,7 +157,8 @@ browse-and-add surface over a **pre-built catalog**, `workshops.json`:
   The reliable way to test is to dispatch DOM events / call the app's flows
   directly via the JS console:
   - Drag: dispatch `dragstart` on the `.chip`, then `dragover` + `drop` on the
-    target `.cell[data-year][data-month]` or `#trayRow`, using a shared
+    target `.cell[data-year][data-month]` or the Ideas cell (`.cal-ideas-cell`,
+    no data-year/month), using a shared
     `DataTransfer`.
   - CSV/JSON import: build a `File`, assign it to the hidden `<input>.files` via a
     `DataTransfer`, and dispatch a `change` event. Stub `window.confirm` to

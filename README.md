@@ -17,9 +17,14 @@ browser you can add trips from.
 - **Month × year grid** — three years shown side by side, one row per month.
   Navigate with prev/next arrows, a year-range jump dropdown, or the **Today**
   button.
-- **Unscheduled ideas tray** — trips without a date live in a tray above the
-  calendar. Drag a trip onto any month to schedule it, or drag it back into the
-  tray to unschedule it.
+- **Ideas column** — an extra column on the right of the grid holds trips with no
+  date. Drag a trip from a month into the Ideas column to unschedule it, or drag
+  an idea onto any month to schedule it.
+- **Filters** — the same filter bar as the Workshops view (Region — Domestic/
+  International, trip type, species, year, month) narrows what shows on the grid
+  and in the Ideas column. Each trip has a Region field (auto-set from the
+  workshop when added, editable in the modal, inferred from the location
+  otherwise).
 - **Rich per-trip detail** — each trip opens a modal with:
   - Status (**Idea / Planned / Confirmed**), shown as color-coded chips
   - Specific dates, group size, and multiple locations
@@ -44,16 +49,16 @@ browser you can add trips from.
 A browsable, filterable catalog of real photography workshops, so you can turn
 operator schedules into planned trips without retyping anything.
 
-- **Filter** by region (US / International), trip type, species, year, and month.
-- **Two ways to browse** — the same month × year grid (read-only workshop chips)
-  plus a filterable list grouped by month, with an entry for undated
-  ("dates by request") trips.
+- **Filter** by region (Domestic / International), trip type, species, year, and month.
+- **Grid + list** — every *dated* workshop appears on the month × year grid
+  (read-only chips; click one to add it). The list below shows only the *undated*
+  ("dates by request") workshops, so nothing is duplicated.
 - **Add to your calendar** — each workshop has an **Add** control that lets you
   drop it onto the Calendar as an **Idea**, **Planned**, or **Confirmed** trip.
-  Dates, location, species, price (→ budget), and the operator (→ tour operator +
-  reference link) are carried over automatically. Undated workshops are added as
-  unscheduled ideas (they land in the tray). Already-added workshops show an
-  "Added" badge instead of the button.
+  Dates, location, species, region, price (→ budget), and the operator (→ tour
+  operator + reference link) are carried over automatically. Undated workshops
+  land in the Ideas column. Already-added workshops show an "Added" badge instead
+  of the button.
 - **Data source** — the catalog is a pre-built snapshot in
   [`expedition-planner/workshops.json`](expedition-planner/workshops.json),
   loaded at startup. See *Workshops data* below.
