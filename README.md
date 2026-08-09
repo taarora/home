@@ -1,9 +1,14 @@
 # Expedition Planner
 
-A self-contained, single-file web app for planning photography expeditions across
-a multi-year horizon. Live at **<https://taarora.github.io/home/expedition-planner/>**.
+A single-file web app for planning photography expeditions across a multi-year
+horizon. Runs standalone on GitHub Pages
+(**<https://taarora.github.io/home/expedition-planner/>**) or, with the included
+sync server, as one shared calendar across all your devices over Tailscale.
 
 ![status: live on GitHub Pages](https://img.shields.io/badge/status-live-2b5a56)
+
+> **Day-to-day how-to (Mac / iPhone / iPad):** see
+> [`expedition-planner/USAGE.md`](expedition-planner/USAGE.md).
 
 ## What it does
 
@@ -128,21 +133,33 @@ undated and appear only in the list under "Dates by request."
 
 ## Running locally
 
-Open `expedition-planner/index.html` through a local web server (recommended over
-`file://`, which some browsers restrict):
+The sync server (recommended — also serves the app) and a plain preview both work:
 
 ```bash
+expedition-planner/r.sh                    # sync server on http://localhost:8743 (+ opens Chrome)
+# or, just to preview without the API:
 python3 -m http.server 8743 --directory expedition-planner
-# then visit http://localhost:8743
 ```
+
+Avoid `file://` — the Workshops tab and sync both need HTTP. See
+[`expedition-planner/USAGE.md`](expedition-planner/USAGE.md) for the full workflow.
 
 ## Repository layout
 
 ```
 expedition-planner/
-  index.html        # the entire app
+  index.html        # the entire app (UI)
   workshops.json    # pre-built workshop catalog for the Workshops view
+  server.py         # optional stdlib sync server (serves app + /api/state)
+  r.sh              # start/restart the sync server, print the tailnet URL
+  scripts/
+    setup-tailscale.sh   # one-time: publish privately over HTTPS on port 8443
+  USAGE.md          # day-to-day how-to across Mac / iPhone / iPad
   Data/             # source material (provider URL list); not served
 README.md
 CLAUDE.md           # working notes for AI agents on this repo
 ```
+
+Trip data is **not** in the repo — it lives in
+`~/Documents/Claude/Code/expedition-planner-data/trips.json` (the server's store,
+gitignored / iCloud-synced), or in the browser's localStorage in standalone mode.
