@@ -9,7 +9,10 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 PORT=8743
 LOG="$DIR/preview.log"
-URL="http://127.0.0.1:${PORT}/"
+# IMPORTANT: always use the "localhost" origin. The browser keys saved trips
+# (localStorage) to the exact origin, and http://localhost and http://127.0.0.1
+# are DIFFERENT buckets — opening the wrong one makes your trips look "gone".
+URL="http://localhost:${PORT}/"
 
 echo "🔍 Checking for a running preview on port ${PORT}…"
 
@@ -35,7 +38,7 @@ fi
 
 echo "🚀 Starting preview…"
 cd "$DIR" || exit 1
-nohup python3 -m http.server "$PORT" --bind 127.0.0.1 > "$LOG" 2>&1 &
+nohup python3 -m http.server "$PORT" > "$LOG" 2>&1 &
 
 echo "⏳ Waiting for the server…"
 for i in $(seq 1 20); do
